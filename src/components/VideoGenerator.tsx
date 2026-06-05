@@ -1,0 +1,440 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Video, Loader2, Upload, Play, Clock, AlertCircle, History, X } from 'lucide-react';
+import { cn } from '../lib/utils';
+import type { GenerationStatus, VideoHistoryItem } from '../types';
+import { useHistory } from '../hooks/useHistory';
+import { v4 as uuidv4 } from 'uuid';
+import { motion, AnimatePresence } from 'motion/react';
+
+export function VideoGenerator({ apiKey }: { apiKey: string }) {
+  const [prompt, setPrompt] = useState('');
+  const [imageUrls, setImageUrls] = useState('');
+  const [numFrames, setNumFrames] = useState(121);
+  const [frameRate, setFrameRate] = useState(24);
+  const [mode, setMode] = useState('standard');
+  const [status, setStatus] = useState<GenerationStatus>('idle');
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [resultVideo, setResultVideo] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [pollLog, setPollLog] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const { history, addHistory, removeHistory } = useHistory<VideoHistoryItem>('agnes_video_history');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const addLog = (msg: string) => {
+    setPollLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt.trim() || !apiKey) return;
+    
+    setStatus('loading');
+    setErrorMsg('');
+    setResultVideo(null);
+    setTaskId(null);
+    setPollLog([]);
+    addLog('正在提交视频生成任务...');
+
+    try {
+      const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+      const body: any = {
+        model: 'agnes-video-v2.0',
+        prompt: prompt.trim(),
+        num_frames: numFrames,
+        frame_rate: frameRate,
+        height: 768,
+        width: 1152
+      };
+
+      const urls = imageUrls.split(/[\n,]+/).map(u => u.trim()).filter(Boolean);
+
+      if (mode === 'keyframes') {
+        body.extra_body = { mode: 'keyframes' };
+        if (urls.length > 0) {
+          body.extra_body.image = urls;
+        }
+      } else {
+        if (urls.length > 1) {
+          body.extra_body = { image: urls };
+        } else if (urls.length === 1) {
+          body.image = urls[0];
+        }
+      }
+
+      const response = await fetch('https://apihub.agnes-ai.com/v1/videos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cleanApiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 调用错误 ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const currentTaskId = data.task_id || data.id || data.data?.task_id || data.body?.id;
+      if (!currentTaskId) {
+        throw new Error('响应中未找到任务 ID (task_id)');
+      }
+
+      setTaskId(currentTaskId);
+      addLog(`任务创建成功，任务 ID: ${currentTaskId}`);
+      
+    } catch (error: any) {
+      setErrorMsg(error.message);
+      setStatus('error');
+      addLog(`执行报错: ${error.message}`);
+    }
+  };
+
+  const checkStatus = async (currentTaskId: string) => {
+    try {
+      const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+      addLog('正在查询状态...');
+      const response = await fetch(`https://apihub.agnes-ai.com/v1/videos/${currentTaskId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${cleanApiKey}`,
+        }
+      });
+
+      if (!response.ok) {
+        addLog(`查询报错: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      const st = data.status || data.state || data.body?.status;
+      
+      const statusMap: Record<string, string> = {
+        'queued': '排队中，请稍候...',
+        'processing': '处理中...',
+        'generating': '生成资源中...',
+        'running': '正在渲染...',
+        'completed': '任务已完成',
+        'succeeded': '请求成功',
+        'failed': '处理失败',
+        'error': '发生错误'
+      };
+
+      if (st) {
+         const displaySt = statusMap[st.toLowerCase()] || st;
+         addLog(`当前状态: ${displaySt}`);
+      } else {
+         addLog(`正在检查... 等待状态返回。`);
+      }
+
+      const isSuccess = st === 'SUCCESS' || st === 'COMPLETED' || st === 'completed' || st === 'succeeded';
+      const isFailed = st === 'FAILED' || st === 'ERROR' || st === 'failed';
+
+      if (isSuccess) {
+        let url = data.video_url || data.result?.url || data.url || data.data?.url || data.output?.video_url || data.data?.[0]?.url || data.remixed_from_video_id || data.body?.remixed_from_video_id || data.body?.video_url;
+        
+        if (!url) {
+           const jsonStr = JSON.stringify(data);
+           const match = jsonStr.match(/https:\/\/[^"']*?\.mp4/);
+           if (match) url = match[0];
+        }
+
+        if (url) {
+          addLog('视频生成成功！');
+          setResultVideo(url);
+          setStatus('success');
+          
+          addHistory({
+             id: uuidv4(),
+             prompt: prompt.trim(),
+             url,
+             timestamp: Date.now()
+          });
+        } else {
+          addLog('状态为成功，但在响应中未找到视频链接。');
+          setErrorMsg('任务已完成，但缺少视频 URL。');
+          setStatus('error');
+        }
+        
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      } else if (isFailed) {
+        addLog('视频生成任务失败。');
+        setErrorMsg(data.error || '生成失败');
+        setStatus('error');
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      }
+
+    } catch (err: any) {
+      addLog(`查询异常: ${err.message}`);
+    }
+  };
+
+  useEffect(() => {
+    if (status === 'loading' && taskId) {
+      pollIntervalRef.current = setInterval(() => checkStatus(taskId), 10000);
+    }
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [taskId, status]);
+
+  const estDuration = (numFrames / frameRate).toFixed(1);
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex justify-end relative z-10 -mb-5 pr-2">
+         <button
+            onClick={() => setShowHistory(!showHistory)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all shadow-sm border",
+              showHistory ? "bg-[#8c52ff]/10 text-[#8c52ff] border-[#8c52ff]/20" : "bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] border-[rgba(0,0,0,0.05)]"
+            )}
+         >
+           <History size={14} />
+           {showHistory ? "隐藏记录" : "生成记录"}
+         </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full items-start">
+        {showHistory ? (
+           <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             animate={{ opacity: 1, x: 0 }}
+             className="bg-white p-6 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col h-[600px] lg:h-[700px]"
+           >
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] tracking-tight mb-4 flex items-center gap-2 border-b border-[rgba(0,0,0,0.05)] pb-4">
+                <History className="text-[#8c52ff]" size={18} />
+                视频生成记录
+              </h3>
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                {history.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-[#86868b]">
+                    <Clock size={32} className="opacity-20 mb-3" />
+                    <p className="text-[14px]">暂无历史记录</p>
+                  </div>
+                ) : (
+                  history.map((item) => (
+                    <motion.div 
+                       key={item.id} 
+                       layout
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex"
+                    >
+                      <video src={item.url} className="w-32 h-24 object-cover shrink-0 bg-[#e8e8ed]" muted />
+                      <div className="p-3 flex-1 min-w-0 flex flex-col">
+                         <p className="text-[13px] text-[#1d1d1f] line-clamp-3 flex-1" title={item.prompt}>{item.prompt}</p>
+                         <div className="flex justify-between items-end mt-2">
+                           <span className="text-[11px] text-[#86868b] font-mono">{new Date(item.timestamp).toLocaleString()}</span>
+                           <div className="flex gap-1">
+                              <a 
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#8c52ff] hover:bg-[#8c52ff]/10 p-1.5 rounded-full transition-all"
+                              >
+                                 <Play size={14} />
+                              </a>
+                              <button
+                                onClick={() => removeHistory(item.id)}
+                                className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 p-1.5 rounded-full transition-all"
+                              >
+                                <X size={14} />
+                              </button>
+                           </div>
+                         </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+           </motion.div>
+        ) : (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white p-6 sm:p-8 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-6 flex flex-col h-[600px] lg:h-[700px] overflow-y-auto custom-scrollbar"
+        >
+          <div>
+            <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">画面描述</label>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              disabled={status === 'loading'}
+              placeholder="描述您想要生成的视频场景细节，例如：运镜方向、主体动作、光影质感..."
+              className="w-full p-4 bg-[#f5f5f7] border border-transparent rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent min-h-[140px] resize-y disabled:opacity-50 text-[15px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+            />
+          </div>
+
+          <div>
+             <div className="flex justify-between items-end mb-2">
+              <label className="block text-[13px] font-semibold text-[#1d1d1f]">图像转视频源图 (选填)</label>
+              <select 
+                 value={mode}
+                 onChange={(e) => setMode(e.target.value)}
+                 disabled={status === 'loading'}
+                 className="text-[12px] px-2 py-1 border border-[rgba(0,0,0,0.1)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 bg-[#f5f5f7] text-[#1d1d1f] font-medium"
+              >
+                <option value="standard">常规 / 图生视频 / 多图转换</option>
+                <option value="keyframes">关键帧动画</option>
+              </select>
+             </div>
+            <textarea
+              value={imageUrls}
+              onChange={(e) => setImageUrls(e.target.value)}
+              disabled={status === 'loading'}
+              rows={2}
+              placeholder="支持贴入图片URL。&#13;&#10;图生视频 / 关键帧 请提供对应数量 URL"
+              className="w-full p-3.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2 flex justify-between items-center">
+                 <span>参数预设</span>
+                 <div className="flex gap-1.5">
+                   {[
+                      { label: '5 秒 (121帧)', f: 121, fps: 24 },
+                      { label: '10 秒 (241帧)', f: 241, fps: 24 },
+                      { label: '18 秒 (441帧)', f: 441, fps: 24 }
+                   ].map(t => (
+                      <button
+                        key={t.label}
+                        onClick={(e) => { e.preventDefault(); setNumFrames(t.f); setFrameRate(t.fps); }}
+                        className="text-[11px] px-2 py-0.5 rounded-[6px] bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#86868b] transition-colors font-normal"
+                      >
+                        {t.label}
+                      </button>
+                   ))}
+                 </div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">帧数</label>
+              <select
+                value={numFrames}
+                onChange={(e) => setNumFrames(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              >
+                <option value={81}>81 帧 (较短)</option>
+                <option value={121}>121 帧 (默认)</option>
+                <option value={161}>161 帧</option>
+                <option value={241}>241 帧</option>
+                <option value={441}>441 帧 (较长)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">帧率 (FPS)</label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={frameRate}
+                onChange={(e) => setFrameRate(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="bg-[#f5f5f7] p-4 rounded-[12px] border border-[rgba(0,0,0,0.05)] flex items-center gap-3 text-[13px] text-[#1d1d1f] mt-auto">
+            <Clock size={16} className="text-[#86868b]" />
+            <span>预估生成视频时长: <strong>{estDuration} 秒</strong></span>
+          </div>
+
+          <button
+            onClick={handleGenerate}
+            disabled={!prompt.trim() || !apiKey || status === 'loading'}
+            className="w-full py-3.5 bg-[#8c52ff] text-white rounded-full text-[15px] font-medium shadow-sm hover:bg-[#7236ed] disabled:opacity-50 disabled:hover:bg-[#8c52ff] transition-all flex items-center justify-center gap-2 mt-4"
+          >
+            {status === 'loading' ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                正在渲染...
+              </>
+            ) : (
+              <>
+                <Video size={18} />
+                生成视频
+              </>
+            )}
+          </button>
+
+          {!apiKey && (
+             <p className="text-[12px] text-[#ff3b30] text-center font-medium">需要配置 API Key 才能生成视频</p>
+          )}
+        </motion.div>
+        )}
+
+        {/* Result & Logs Display */}
+        <div className="bg-white rounded-[24px] border border-[rgba(0,0,0,0.05)] p-6 sm:p-8 flex flex-col h-[600px] lg:h-[700px] overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          <AnimatePresence mode="wait">
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0 relative z-10 w-full h-full">
+            {status === 'idle' && !resultVideo && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#86868b] flex flex-col items-center gap-4 text-center">
+                <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
+                  <Video size={24} className="opacity-50" />
+                </div>
+                <p className="text-[15px]">生成的视频将在这边呈现</p>
+              </motion.div>
+            )}
+
+            {status === 'loading' && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4 text-[#8c52ff] mb-8">
+                <Loader2 size={36} className="animate-spin" />
+                <p className="text-[15px] font-medium">视频正在云端逐帧渲染...</p>
+              </motion.div>
+            )}
+
+            {status === 'error' && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-[#ff3b30] bg-[#ff3b30]/5 p-5 rounded-[16px] max-w-sm text-center mb-8">
+                <AlertCircle size={24} className="mx-auto mb-3" />
+                <h3 className="font-semibold text-[15px] mb-1">生成遇到了问题</h3>
+                <p className="text-[13px] opacity-90">{errorMsg}</p>
+              </motion.div>
+            )}
+
+            {status === 'success' && resultVideo && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full aspect-video rounded-[16px] overflow-hidden bg-[#e8e8ed] flex items-center justify-center border border-[rgba(0,0,0,0.05)] shadow-[0_8px_32px_rgba(0,0,0,0.08)] mb-4 relative group">
+                <video 
+                  src={resultVideo} 
+                  controls
+                  autoPlay
+                  loop
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a 
+                    href={resultVideo} 
+                    download="agnes-video.mp4" 
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-white/90 text-[#1d1d1f] px-4 py-2 rounded-full text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all backdrop-blur-sm"
+                  >
+                    存储 .mp4
+                  </a>
+                </div>
+              </motion.div>
+            )}
+          </div>
+          </AnimatePresence>
+
+          {/* Polling Logs */}
+          <AnimatePresence>
+          {(status === 'loading' || pollLog.length > 0) && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 160, opacity: 1 }} className="shrink-0 bg-[#f5f5f7] rounded-[16px] border border-transparent p-5 font-mono text-[12px] text-[#86868b] overflow-y-auto mt-4 custom-scrollbar">
+              {pollLog.map((log, i) => (
+                <div key={i} className="mb-1.5 leading-relaxed">{log}</div>
+              ))}
+            </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}

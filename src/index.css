@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer components {
+  .markdown-body h1 {
+    @apply text-2xl font-bold mb-4 mt-6;
+  }
+  .markdown-body h2 {
+    @apply text-xl font-bold mb-3 mt-5;
+  }
+  .markdown-body h3 {
+    @apply text-lg font-bold mb-2 mt-4;
+  }
+  .markdown-body p {
+    @apply mb-4;
+  }
+  .markdown-body ul {
+    @apply list-disc list-inside mb-4 pl-4;
+  }
+  .markdown-body ol {
+    @apply list-decimal list-inside mb-4 pl-4;
+  }
+  .markdown-body a {
+    @apply text-[#0071e3] hover:underline;
+  }
+  .markdown-body code {
+    @apply bg-[rgba(0,0,0,0.05)] px-1.5 py-0.5 rounded-[6px] text-[13px] font-mono text-[#e30052];
+  }
+  .markdown-body pre {
+    @apply bg-[#1d1d1f] text-[#f5f5f7] p-5 rounded-[16px] overflow-x-auto mb-4 text-[13px] font-mono shadow-sm leading-relaxed;
+  }
+  .markdown-body pre code {
+    @apply bg-transparent px-0 py-0 text-inherit;
+  }
+  .markdown-body blockquote {
+    @apply border-l-4 border-[#d2d2d7] pl-4 py-1 italic text-[#86868b] my-4;
+  }
+  /* For user bubble which is blue */
+  .bg-blue-600 .markdown-body code {
+    @apply bg-blue-700 ring-blue-500;
+  }
+  .bg-blue-600 .markdown-body a {
+    @apply text-blue-200;
+  }
+}
