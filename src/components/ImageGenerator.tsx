@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ImageIcon, Loader2, Upload, X, History, Plus } from 'lucide-react';
+import { ImageIcon, Loader2, Upload, X, History, Plus, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { GenerationStatus, ImageHistoryItem } from '../types';
 import { useHistory } from '../hooks/useHistory';
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export function ImageGenerator({ apiKey }: { apiKey: string }) {
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1024x1024');
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceImage, setReferenceImage] = useState('');
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -42,12 +42,19 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
         prompt: prompt.trim(),
         size,
         extra_body: {
-          response_format: 'url'
+          response_format: 'b64_json'
         }
       };
 
       if (referenceImage) {
-        body.image = [referenceImage];
+        if (referenceImage.startsWith('data:')) {
+          body.image = [referenceImage];
+        } else {
+          const urls = referenceImage.split(/[\n,]+/).map(u => u.trim()).filter(Boolean);
+          if (urls.length > 0) {
+            body.image = urls;
+          }
+        }
       }
 
       const response = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
@@ -134,16 +141,20 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
                        layout
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
-                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex h-24"
+                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex h-24 hover:cursor-pointer"
+                       onClick={() => {
+                         setResultImage(item.url);
+                         setStatus('success');
+                       }}
                     >
                       <img src={item.url} className="w-24 h-24 object-cover shrink-0 bg-[#e8e8ed]" alt={item.prompt} />
-                      <div className="p-3 flex-1 min-w-0 flex flex-col">
+                      <div className="p-3 flex-1 min-w-0 flex flex-col pointer-events-none">
                          <p className="text-[13px] text-[#1d1d1f] line-clamp-2 flex-1" title={item.prompt}>{item.prompt}</p>
                          <div className="flex justify-between items-end mt-2">
                            <span className="text-[11px] text-[#86868b] font-mono">{new Date(item.timestamp).toLocaleString()}</span>
-                           <div className="flex gap-1">
+                           <div className="flex gap-1 pointer-events-auto">
                               <button
-                                onClick={() => removeHistory(item.id)}
+                                onClick={(e) => { e.stopPropagation(); removeHistory(item.id); }}
                                 className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 p-1.5 rounded-full transition-all"
                               >
                                 <X size={14} />
@@ -174,50 +185,62 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="relative">
               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图片比例</label>
               <select
                 value={size}
                 onChange={(e) => setSize(e.target.value)}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full pl-4 pr-10 py-3 appearance-none bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               >
                 <option value="1024x1024">默认正方形 (1:1)</option>
                 <option value="1024x768">横向宽屏 (4:3)</option>
                 <option value="768x1024">竖向画幅 (3:4)</option>
+                <option value="768x1365">竖屏比例 (9:16)</option>
                 <option value="1152x768">全景宽幅 (16:9)</option>
               </select>
+              <div className="absolute right-3 top-[38px] pointer-events-none text-[#86868b]">
+                <ChevronDown size={16} />
+              </div>
             </div>
           </div>
 
           <div>
             <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2 mt-4">图像灵感 (可选)</label>
-            {referenceImage ? (
+            {referenceImage && (referenceImage.startsWith('data:') || referenceImage.startsWith('http')) ? (
               <div className="relative inline-block border border-[rgba(0,0,0,0.05)] rounded-[16px] overflow-hidden mt-2 p-1 bg-[#f5f5f7]">
-                <img src={referenceImage} alt="Reference" className="h-32 object-contain bg-white rounded-[12px]" />
+                <img src={referenceImage.split(/[\n,]+/)[0].trim()} alt="Reference" className="h-32 object-contain bg-white rounded-[12px]" />
                 <button
-                  onClick={() => setReferenceImage(null)}
+                  onClick={() => setReferenceImage('')}
                   className="absolute top-3 right-3 p-1.5 bg-white/80 backdrop-blur-md hover:bg-white text-[#1d1d1f] rounded-full shadow-sm transition"
                 >
                   <X size={14} />
                 </button>
               </div>
             ) : (
-              <div className="border border-dashed border-[rgba(0,0,0,0.15)] rounded-[16px] p-8 text-center hover:border-[#d95d39]/40 transition-colors bg-[#f5f5f7]">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
+              <div>
+                <textarea
+                  value={referenceImage}
+                  onChange={(e) => setReferenceImage(e.target.value)}
                   disabled={status === 'loading'}
-                  className="hidden"
-                  id="image-upload"
+                  rows={2}
+                  placeholder="支持贴入图片URL用于图生图，或点击下方上传本地图片..."
+                  className="w-full p-3.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all resize-none"
                 />
-                <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-3 text-[#86868b] hover:text-[#1d1d1f] transition-colors">
-                  <div className="w-10 h-10 bg-white shadow-sm flex items-center justify-center rounded-full">
-                    <Upload size={18} />
-                  </div>
-                  <span className="text-[14px] font-medium">点击上传参考图</span>
-                </label>
+                <div className="mt-2 flex justify-start">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={status === 'loading'}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label htmlFor="image-upload" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] rounded-[8px] cursor-pointer text-[12px] font-medium transition-colors">
+                    <Upload size={14} />
+                    上传本地图片
+                  </label>
+                </div>
               </div>
             )}
           </div>

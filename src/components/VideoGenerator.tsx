@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Video, Loader2, Upload, Play, Clock, AlertCircle, History, X } from 'lucide-react';
+import { Video, Loader2, Upload, Play, Clock, AlertCircle, History, X, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { GenerationStatus, VideoHistoryItem } from '../types';
 import { useHistory } from '../hooks/useHistory';
@@ -23,7 +23,25 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const addLog = (msg: string) => {
-    setPollLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    setPollLog(prev => {
+      const timeStr = `[${new Date().toLocaleTimeString('zh-CN', { hour12: false })}]`;
+      const lastLine = prev[prev.length - 1];
+      if (lastLine) {
+        // Extract message from last line (after the timestamp)
+        const lastMsgMatch = lastLine.match(/\[.*?\]\s(.*)/);
+        if (lastMsgMatch) {
+           let lastMsg = lastMsgMatch[1];
+           // Remove existing counter if any
+           lastMsg = lastMsg.replace(/\s\(\d+次\)$/, '');
+           if (lastMsg === msg) {
+             const cntMatch = lastLine.match(/\((\d+)次\)$/);
+             const count = cntMatch ? parseInt(cntMatch[1], 10) + 1 : 2;
+             return [...prev.slice(0, -1), `${timeStr} ${msg} (${count}次)`];
+           }
+        }
+      }
+      return [...prev, `${timeStr} ${msg}`];
+    });
   };
 
   const handleGenerate = async () => {
@@ -34,6 +52,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
     setResultVideo(null);
     setTaskId(null);
     setPollLog([]);
+    lastStatusRef.current = null;
     addLog('正在提交视频生成任务...');
 
     try {
@@ -92,10 +111,11 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
     }
   };
 
+  const lastStatusRef = useRef<string | null>(null);
+
   const checkStatus = async (currentTaskId: string) => {
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
-      addLog('正在查询状态...');
       const response = await fetch(`https://apihub.agnes-ai.com/v1/videos/${currentTaskId}`, {
         method: 'GET',
         headers: {
@@ -123,10 +143,11 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
       };
 
       if (st) {
-         const displaySt = statusMap[st.toLowerCase()] || st;
-         addLog(`当前状态: ${displaySt}`);
-      } else {
-         addLog(`正在检查... 等待状态返回。`);
+         if (lastStatusRef.current !== st) {
+           const displaySt = statusMap[st.toLowerCase()] || st;
+           addLog(`当前状态: ${displaySt}`);
+           lastStatusRef.current = st;
+         }
       }
 
       const isSuccess = st === 'SUCCESS' || st === 'COMPLETED' || st === 'completed' || st === 'succeeded';
@@ -221,24 +242,30 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                        layout
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
-                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex"
+                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex hover:cursor-pointer"
+                       onClick={() => {
+                         setResultVideo(item.url);
+                         setStatus('success');
+                         setPollLog([]);
+                       }}
                     >
                       <video src={item.url} className="w-32 h-24 object-cover shrink-0 bg-[#e8e8ed]" muted />
-                      <div className="p-3 flex-1 min-w-0 flex flex-col">
+                      <div className="p-3 flex-1 min-w-0 flex flex-col pointer-events-none">
                          <p className="text-[13px] text-[#1d1d1f] line-clamp-3 flex-1" title={item.prompt}>{item.prompt}</p>
                          <div className="flex justify-between items-end mt-2">
                            <span className="text-[11px] text-[#86868b] font-mono">{new Date(item.timestamp).toLocaleString()}</span>
-                           <div className="flex gap-1">
+                           <div className="flex gap-1 pointer-events-auto">
                               <a 
                                 href={item.url}
                                 target="_blank"
                                 rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#8c52ff] hover:bg-[#8c52ff]/10 p-1.5 rounded-full transition-all"
                               >
                                  <Play size={14} />
                               </a>
                               <button
-                                onClick={() => removeHistory(item.id)}
+                                onClick={(e) => { e.stopPropagation(); removeHistory(item.id); }}
                                 className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 p-1.5 rounded-full transition-all"
                               >
                                 <X size={14} />
@@ -271,15 +298,20 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
           <div>
              <div className="flex justify-between items-end mb-2">
               <label className="block text-[13px] font-semibold text-[#1d1d1f]">图像转视频源图 (选填)</label>
-              <select 
-                 value={mode}
-                 onChange={(e) => setMode(e.target.value)}
-                 disabled={status === 'loading'}
-                 className="text-[12px] px-2 py-1 border border-[rgba(0,0,0,0.1)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 bg-[#f5f5f7] text-[#1d1d1f] font-medium"
-              >
-                <option value="standard">常规 / 图生视频 / 多图转换</option>
-                <option value="keyframes">关键帧动画</option>
-              </select>
+              <div className="relative">
+                <select 
+                   value={mode}
+                   onChange={(e) => setMode(e.target.value)}
+                   disabled={status === 'loading'}
+                   className="appearance-none text-[12px] pl-2 pr-7 py-1 border border-[rgba(0,0,0,0.1)] rounded-[8px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 bg-[#f5f5f7] text-[#1d1d1f] font-medium"
+                >
+                  <option value="standard">常规 / 图生视频 / 多图转换</option>
+                  <option value="keyframes">关键帧动画</option>
+                </select>
+                <div className="absolute right-2 top-1.5 pointer-events-none text-[#86868b]">
+                  <ChevronDown size={14} />
+                </div>
+              </div>
              </div>
             <textarea
               value={imageUrls}
@@ -312,13 +344,13 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                  </div>
               </label>
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">帧数</label>
               <select
                 value={numFrames}
                 onChange={(e) => setNumFrames(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full pl-4 pr-10 py-3 appearance-none bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               >
                 <option value={81}>81 帧 (较短)</option>
                 <option value={121}>121 帧 (默认)</option>
@@ -326,6 +358,9 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 <option value={241}>241 帧</option>
                 <option value={441}>441 帧 (较长)</option>
               </select>
+              <div className="absolute right-3 top-[38px] pointer-events-none text-[#86868b]">
+                <ChevronDown size={16} />
+              </div>
             </div>
             <div>
               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">帧率 (FPS)</label>
