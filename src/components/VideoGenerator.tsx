@@ -20,6 +20,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [pollLog, setPollLog] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [queryTaskId, setQueryTaskId] = useState('');
 
   const { history, addHistory, removeHistory } = useHistory<VideoHistoryItem>('agnes_video_history');
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -174,7 +175,8 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
              id: uuidv4(),
              prompt: prompt.trim(),
              url,
-             timestamp: Date.now()
+             timestamp: Date.now(),
+             taskId: currentTaskId
           });
         } else {
           addLog('状态为成功，但在响应中未找到视频链接。');
@@ -213,7 +215,33 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-end relative z-10 -mb-5 pr-2">
+      <div className="flex justify-end gap-3 relative z-10 -mb-5 pr-2">
+         <div className="flex items-center bg-white border border-[rgba(0,0,0,0.05)] rounded-full px-2 py-1 shadow-sm h-[32px]">
+           <input
+             type="text"
+             value={queryTaskId}
+             onChange={(e) => setQueryTaskId(e.target.value)}
+             placeholder="输入任务 ID 恢复查询..."
+             disabled={!apiKey}
+             className="text-[12px] bg-transparent outline-none w-[150px] px-2 text-[#1d1d1f] placeholder:text-[#86868b] disabled:opacity-50"
+           />
+           <button
+             onClick={() => {
+               if (!queryTaskId.trim() || !apiKey) return;
+               setPrompt('（按任务ID恢复查询）');
+               setTaskId(queryTaskId.trim());
+               setStatus('loading');
+               setResultVideo(null);
+               setResultPrompt('');
+               setPollLog(['开始恢复任务查询...']);
+               setPreviewItem(null);
+             }}
+             disabled={!apiKey || !queryTaskId.trim() || status === 'loading'}
+             className="text-[12px] text-[#8c52ff] font-medium px-2 border-l border-[rgba(0,0,0,0.05)] hover:opacity-80 transition-opacity disabled:opacity-50"
+           >
+             查询
+           </button>
+         </div>
          <button
             onClick={() => {
               if (showHistory) setPreviewItem(null);
@@ -262,6 +290,11 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                     >
                       <video src={item.url} className="w-32 h-24 object-cover shrink-0 bg-[#e8e8ed]" muted />
                       <div className="p-3 flex-1 min-w-0 flex flex-col pointer-events-none">
+                         {item.taskId && (
+                           <div className="text-[10px] text-[#8c52ff] bg-[#8c52ff]/10 px-1.5 py-0.5 rounded-[4px] self-start mb-1 font-mono break-all inline-block pointer-events-auto cursor-text select-text" title="任务 ID">
+                             ID: {item.taskId}
+                           </div>
+                         )}
                          <p className="text-[13px] text-[#1d1d1f] line-clamp-3 flex-1" title={item.prompt}>{item.prompt}</p>
                          <div className="flex justify-between items-end mt-2">
                            <span className="text-[11px] text-[#86868b] font-mono">{new Date(item.timestamp).toLocaleString()}</span>

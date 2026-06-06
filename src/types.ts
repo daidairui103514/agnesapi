@@ -33,6 +33,7 @@ export interface VideoHistoryItem {
   prompt: string;
   url: string;
   timestamp: number;
+  taskId?: string;
 }
 
 export interface ChatMessage {
