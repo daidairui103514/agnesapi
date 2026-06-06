@@ -16,7 +16,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [resultVideo, setResultVideo] = useState<string | null>(null);
   const [resultPrompt, setResultPrompt] = useState<string>('');
-  const [previewItem, setPreviewItem] = useState<{url: string, prompt: string} | null>(null);
+  const [previewItem, setPreviewItem] = useState<{url: string, prompt: string, taskId?: string} | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [pollLog, setPollLog] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -211,6 +211,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const displayStatus = previewItem ? 'success' : status;
   const displayVideo = previewItem ? previewItem.url : resultVideo;
   const displayPrompt = previewItem ? previewItem.prompt : resultPrompt;
+  const displayTaskId = previewItem ? previewItem.taskId : taskId;
   const showLogs = !previewItem && (status === 'loading' || pollLog.length > 0);
   
   return (
@@ -233,7 +234,8 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                setStatus('loading');
                setResultVideo(null);
                setResultPrompt('');
-               setPollLog(['开始恢复任务查询...']);
+               setPollLog([`开始恢复任务查询，任务 ID: ${queryTaskId.trim()}`]);
+               setQueryTaskId('');
                setPreviewItem(null);
              }}
              disabled={!apiKey || !queryTaskId.trim() || status === 'loading'}
@@ -285,7 +287,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                           previewItem?.url === item.url ? "bg-white shadow-sm ring-2 ring-[#8c52ff]/30" : "bg-[#f5f5f7] hover:bg-white hover:shadow-sm"
                        )}
                        onClick={() => {
-                         setPreviewItem({url: item.url, prompt: item.prompt});
+                         setPreviewItem({url: item.url, prompt: item.prompt, taskId: item.taskId});
                        }}
                     >
                       <video src={item.url} className="w-32 h-24 object-cover shrink-0 bg-[#e8e8ed]" muted />
@@ -465,7 +467,10 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
             {displayStatus === 'loading' && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4 text-[#8c52ff] mb-8">
                 <Loader2 size={36} className="animate-spin" />
-                <p className="text-[15px] font-medium">视频正在云端逐帧渲染...</p>
+                <div className="text-center">
+                  <p className="text-[15px] font-medium">视频正在云端逐帧渲染...</p>
+                  {taskId && <p className="text-[12px] font-mono mt-1 opacity-80 select-text">任务 ID: {taskId}</p>}
+                </div>
               </motion.div>
             )}
 
@@ -479,6 +484,11 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
 
             {displayStatus === 'success' && displayVideo && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full flex-col flex items-center justify-center mb-4 relative group">
+                {displayTaskId && (
+                  <div className="mb-3 px-3 py-1.5 bg-[#8c52ff]/10 text-[#8c52ff] rounded-md text-[12px] font-mono select-text self-start">
+                    任务 ID: {displayTaskId}
+                  </div>
+                )}
                 <div className="w-full aspect-video rounded-[16px] overflow-hidden bg-[#e8e8ed] flex items-center justify-center border border-[rgba(0,0,0,0.05)] shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative">
                   <video 
                     src={displayVideo} 
