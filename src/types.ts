@@ -37,7 +37,7 @@ export interface VideoHistoryItem {
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: any; // Allow string or array of parts
 }
 
 export interface ChatHistoryItem {

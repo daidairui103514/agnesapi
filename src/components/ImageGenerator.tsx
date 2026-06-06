@@ -12,6 +12,8 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
   const [referenceImage, setReferenceImage] = useState('');
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [resultPrompt, setResultPrompt] = useState<string>('');
+  const [previewItem, setPreviewItem] = useState<{url: string, prompt: string} | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -34,6 +36,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
     setStatus('loading');
     setErrorMsg('');
     setResultImage(null);
+    setResultPrompt('');
 
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
@@ -48,11 +51,11 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
 
       if (referenceImage) {
         if (referenceImage.startsWith('data:')) {
-          body.image = [referenceImage];
+          body.image = referenceImage;
         } else {
           const urls = referenceImage.split(/[\n,]+/).map(u => u.trim()).filter(Boolean);
           if (urls.length > 0) {
-            body.image = urls;
+            body.image = urls[0];
           }
         }
       }
@@ -87,6 +90,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
          finalUrl = `data:image/png;base64,${imgUrl}`;
       }
       setResultImage(finalUrl);
+      setResultPrompt(prompt.trim());
 
       addHistory({
          id: uuidv4(),
@@ -102,11 +106,18 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
     }
   };
 
+  const displayStatus = previewItem ? 'success' : status;
+  const displayImage = previewItem ? previewItem.url : resultImage;
+  const displayPrompt = previewItem ? previewItem.prompt : resultPrompt;
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-end relative z-10 -mb-5 pr-2">
          <button
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={() => {
+              if (showHistory) setPreviewItem(null);
+              setShowHistory(!showHistory);
+            }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all shadow-sm border",
               showHistory ? "bg-[#d95d39]/10 text-[#d95d39] border-[#d95d39]/20" : "bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] border-[rgba(0,0,0,0.05)]"
@@ -141,10 +152,11 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
                        layout
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
-                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex h-24 hover:cursor-pointer"
+                       className={cn("group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] overflow-hidden transition-all flex h-24 hover:cursor-pointer",
+                          previewItem?.url === item.url ? "bg-white shadow-sm ring-2 ring-[#d95d39]/30" : "bg-[#f5f5f7] hover:bg-white hover:shadow-sm"
+                       )}
                        onClick={() => {
-                         setResultImage(item.url);
-                         setStatus('success');
+                         setPreviewItem({url: item.url, prompt: item.prompt});
                        }}
                     >
                       <img src={item.url} className="w-24 h-24 object-cover shrink-0 bg-[#e8e8ed]" alt={item.prompt} />
@@ -272,7 +284,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
         {/* Result Display */}
         <div className="bg-white rounded-[24px] border border-[rgba(0,0,0,0.05)] p-6 sm:p-8 flex flex-col items-center justify-center h-[600px] lg:h-[700px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] relative">
           <AnimatePresence mode="wait">
-          {status === 'idle' && !resultImage && (
+          {displayStatus === 'idle' && !displayImage && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#86868b] flex flex-col items-center gap-4 text-center">
               <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
                  <ImageIcon size={24} className="opacity-50" />
@@ -281,30 +293,35 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
             </motion.div>
           )}
 
-          {status === 'loading' && (
+          {displayStatus === 'loading' && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4 text-[#d95d39]">
               <Loader2 size={36} className="animate-spin" />
               <p className="text-[15px] font-medium">正在挥洒创意...</p>
             </motion.div>
           )}
 
-          {status === 'error' && (
+          {displayStatus === 'error' && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-[#ff3b30] bg-[#ff3b30]/5 p-5 rounded-[16px] max-w-sm text-center">
               <h3 className="font-semibold text-[15px] mb-1">生成遇到了问题</h3>
               <p className="text-[13px] opacity-90">{errorMsg}</p>
             </motion.div>
           )}
 
-          {status === 'success' && resultImage && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex items-center justify-center relative group">
+          {displayStatus === 'success' && displayImage && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex flex-col items-center justify-center relative group">
               <img 
-                src={resultImage} 
+                src={displayImage} 
                 alt="Generated Result" 
-                className="max-w-full max-h-[600px] object-contain rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] bg-white"
+                className="max-w-full max-h-[500px] object-contain rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] bg-white"
               />
+              {displayPrompt && (
+                <div className="mt-6 px-4 py-3 bg-[#f5f5f7] rounded-[12px] max-w-full text-[13px] text-[#1d1d1f] shadow-sm max-h-[100px] overflow-y-auto w-[80%] break-words custom-scrollbar">
+                  {displayPrompt}
+                </div>
+              )}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <a 
-                  href={resultImage} 
+                  href={displayImage} 
                   download="agnes-image.png" 
                   target="_blank"
                   rel="noreferrer"

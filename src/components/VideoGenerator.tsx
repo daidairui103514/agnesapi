@@ -15,6 +15,8 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [taskId, setTaskId] = useState<string | null>(null);
   const [resultVideo, setResultVideo] = useState<string | null>(null);
+  const [resultPrompt, setResultPrompt] = useState<string>('');
+  const [previewItem, setPreviewItem] = useState<{url: string, prompt: string} | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [pollLog, setPollLog] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -50,6 +52,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
     setStatus('loading');
     setErrorMsg('');
     setResultVideo(null);
+    setResultPrompt('');
     setTaskId(null);
     setPollLog([]);
     lastStatusRef.current = null;
@@ -143,11 +146,10 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
       };
 
       if (st) {
-         if (lastStatusRef.current !== st) {
-           const displaySt = statusMap[st.toLowerCase()] || st;
-           addLog(`当前状态: ${displaySt}`);
-           lastStatusRef.current = st;
-         }
+         const displaySt = statusMap[st.toLowerCase()] || st;
+         addLog(`当前状态: ${displaySt}`);
+      } else {
+         addLog(`正在检查... 等待状态返回。`);
       }
 
       const isSuccess = st === 'SUCCESS' || st === 'COMPLETED' || st === 'completed' || st === 'succeeded';
@@ -165,6 +167,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
         if (url) {
           addLog('视频生成成功！');
           setResultVideo(url);
+          setResultPrompt(prompt.trim() || '视频生成');
           setStatus('success');
           
           addHistory({
@@ -203,11 +206,19 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
 
   const estDuration = (numFrames / frameRate).toFixed(1);
 
+  const displayStatus = previewItem ? 'success' : status;
+  const displayVideo = previewItem ? previewItem.url : resultVideo;
+  const displayPrompt = previewItem ? previewItem.prompt : resultPrompt;
+  const showLogs = !previewItem && (status === 'loading' || pollLog.length > 0);
+  
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-end relative z-10 -mb-5 pr-2">
          <button
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={() => {
+              if (showHistory) setPreviewItem(null);
+              setShowHistory(!showHistory);
+            }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all shadow-sm border",
               showHistory ? "bg-[#8c52ff]/10 text-[#8c52ff] border-[#8c52ff]/20" : "bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] border-[rgba(0,0,0,0.05)]"
@@ -242,11 +253,11 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                        layout
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
-                       className="group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] bg-[#f5f5f7] overflow-hidden hover:bg-white hover:shadow-sm transition-all flex hover:cursor-pointer"
+                       className={cn("group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] overflow-hidden transition-all flex hover:cursor-pointer",
+                          previewItem?.url === item.url ? "bg-white shadow-sm ring-2 ring-[#8c52ff]/30" : "bg-[#f5f5f7] hover:bg-white hover:shadow-sm"
+                       )}
                        onClick={() => {
-                         setResultVideo(item.url);
-                         setStatus('success');
-                         setPollLog([]);
+                         setPreviewItem({url: item.url, prompt: item.prompt});
                        }}
                     >
                       <video src={item.url} className="w-32 h-24 object-cover shrink-0 bg-[#e8e8ed]" muted />
@@ -409,7 +420,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
         <div className="bg-white rounded-[24px] border border-[rgba(0,0,0,0.05)] p-6 sm:p-8 flex flex-col h-[600px] lg:h-[700px] overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
           <AnimatePresence mode="wait">
           <div className="flex-1 flex flex-col items-center justify-center min-h-0 relative z-10 w-full h-full">
-            {status === 'idle' && !resultVideo && (
+            {displayStatus === 'idle' && !displayVideo && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#86868b] flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
                   <Video size={24} className="opacity-50" />
@@ -418,14 +429,14 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
               </motion.div>
             )}
 
-            {status === 'loading' && (
+            {displayStatus === 'loading' && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4 text-[#8c52ff] mb-8">
                 <Loader2 size={36} className="animate-spin" />
                 <p className="text-[15px] font-medium">视频正在云端逐帧渲染...</p>
               </motion.div>
             )}
 
-            {status === 'error' && (
+            {displayStatus === 'error' && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="text-[#ff3b30] bg-[#ff3b30]/5 p-5 rounded-[16px] max-w-sm text-center mb-8">
                 <AlertCircle size={24} className="mx-auto mb-3" />
                 <h3 className="font-semibold text-[15px] mb-1">生成遇到了问题</h3>
@@ -433,26 +444,33 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
               </motion.div>
             )}
 
-            {status === 'success' && resultVideo && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full aspect-video rounded-[16px] overflow-hidden bg-[#e8e8ed] flex items-center justify-center border border-[rgba(0,0,0,0.05)] shadow-[0_8px_32px_rgba(0,0,0,0.08)] mb-4 relative group">
-                <video 
-                  src={resultVideo} 
-                  controls
-                  autoPlay
-                  loop
-                  className="w-full h-full object-contain"
-                />
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a 
-                    href={resultVideo} 
-                    download="agnes-video.mp4" 
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-white/90 text-[#1d1d1f] px-4 py-2 rounded-full text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all backdrop-blur-sm"
-                  >
-                    存储 .mp4
-                  </a>
+            {displayStatus === 'success' && displayVideo && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full flex-col flex items-center justify-center mb-4 relative group">
+                <div className="w-full aspect-video rounded-[16px] overflow-hidden bg-[#e8e8ed] flex items-center justify-center border border-[rgba(0,0,0,0.05)] shadow-[0_8px_32px_rgba(0,0,0,0.08)] relative">
+                  <video 
+                    src={displayVideo} 
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-contain"
+                  />
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <a 
+                      href={displayVideo} 
+                      download="agnes-video.mp4" 
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-white/90 text-[#1d1d1f] px-4 py-2 rounded-full text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all backdrop-blur-sm"
+                    >
+                      存储 .mp4
+                    </a>
+                  </div>
                 </div>
+                {displayPrompt && (
+                  <div className="mt-6 px-4 py-3 bg-[#f5f5f7] rounded-[12px] w-full text-[13px] text-[#1d1d1f] shadow-sm max-h-[100px] overflow-y-auto break-words custom-scrollbar">
+                    {displayPrompt}
+                  </div>
+                )}
               </motion.div>
             )}
           </div>
@@ -460,7 +478,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
 
           {/* Polling Logs */}
           <AnimatePresence>
-          {(status === 'loading' || pollLog.length > 0) && (
+          {showLogs && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 160, opacity: 1 }} className="shrink-0 bg-[#f5f5f7] rounded-[16px] border border-transparent p-5 font-mono text-[12px] text-[#86868b] overflow-y-auto mt-4 custom-scrollbar">
               {pollLog.map((log, i) => (
                 <div key={i} className="mb-1.5 leading-relaxed">{log}</div>
