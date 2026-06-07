@@ -5,4 +5,4 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "agnes-history"
-database_id = "YOUR_D1_DATABASE_ID_HERE"
+database_id = "5a92e823-e1a4-4fae-80af-ec7bc9b51a3d"

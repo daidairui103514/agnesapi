@@ -372,25 +372,25 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-2">
-               <label className="block text-[13px] font-semibold text-[#1d1d1f]">常用比例</label>
-               <div className="flex flex-wrap gap-2">
+            <div className="col-span-2">
+               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-3">常用比例</label>
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                  {[
                    { label: '1080x1080 (1:1)', w: 1080, h: 1080 },
                    { label: '1440x1080 (4:3)', w: 1440, h: 1080 },
                    { label: '1080x1440 (3:4)', w: 1080, h: 1440 },
-                   { label: '1080x1920 (9:16)', w: 1080, h: 1920 },
                    { label: '1920x1080 (16:9)', w: 1920, h: 1080 },
+                   { label: '1080x1920 (9:16)', w: 1080, h: 1920 },
                    { label: '3840x2160 (4K)', w: 3840, h: 2160 }
                  ].map(t => (
                     <button
                       key={t.w + 'x' + t.h}
                       onClick={(e) => { e.preventDefault(); setWidth(t.w); setHeight(t.h); }}
                       className={cn(
-                        "text-[12px] px-3 py-1.5 rounded-[8px] transition-all font-medium border",
+                        "text-[12px] py-2 rounded-[8px] transition-all font-medium border flex items-center justify-center font-mono tracking-tight",
                         width === t.w && height === t.h 
-                          ? "bg-[#8c52ff] text-white border-[#8c52ff] shadow-sm" 
-                          : "bg-white hover:bg-[#f5f5f7] text-[#1d1d1f] border-[rgba(0,0,0,0.05)]"
+                          ? "bg-[#8c52ff] text-white border-[#8c52ff] shadow-[0_2px_10px_rgba(140,82,255,0.2)]" 
+                          : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] border-transparent"
                       )}
                     >
                       {t.label}
