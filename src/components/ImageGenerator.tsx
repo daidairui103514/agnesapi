@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export function ImageGenerator({ apiKey }: { apiKey: string }) {
   const [prompt, setPrompt] = useState('');
-  const [width, setWidth] = useState(1080);
-  const [height, setHeight] = useState(1080);
+  const [width, setWidth] = useState(1088);
+  const [height, setHeight] = useState(1088);
   const [referenceImage, setReferenceImage] = useState('');
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultImage, setResultImage] = useState<string | null>(null);
@@ -202,12 +202,12 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
                <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-3">常用比例</label>
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                  {[
-                   { label: '1080x1080 (1:1)', w: 1080, h: 1080 },
-                   { label: '1440x1080 (4:3)', w: 1440, h: 1080 },
-                   { label: '1080x1440 (3:4)', w: 1080, h: 1440 },
-                   { label: '1920x1080 (16:9)', w: 1920, h: 1080 },
-                   { label: '1080x1920 (9:16)', w: 1080, h: 1920 },
-                   { label: '3840x2160 (4K)', w: 3840, h: 2160 }
+                   { label: '1088x1088 (1:1)', w: 1088, h: 1088 },
+                   { label: '1408x1088 (4:3)', w: 1408, h: 1088 },
+                   { label: '1088x1408 (3:4)', w: 1088, h: 1408 },
+                   { label: '1920x1088 (16:9)', w: 1920, h: 1088 },
+                   { label: '1088x1920 (9:16)', w: 1088, h: 1920 },
+                   { label: '3840x2176 (4K)', w: 3840, h: 2176 }
                  ].map(t => (
                     <button
                       key={t.w + 'x' + t.h}
@@ -225,7 +225,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
                </div>
             </div>
             <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像宽度</label>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像宽度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
               <input
                 type="number"
                 step="64"
@@ -238,7 +238,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
               />
             </div>
             <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像高度</label>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像高度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
               <input
                 type="number"
                 step="64"
