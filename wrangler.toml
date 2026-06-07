@@ -1,0 +1,8 @@
+name = "agnes-ai-tools"
+compatibility_date = "2024-03-20"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agnes-history"
+database_id = "YOUR_D1_DATABASE_ID_HERE"

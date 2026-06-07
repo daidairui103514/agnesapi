@@ -11,6 +11,8 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const [imageUrls, setImageUrls] = useState('');
   const [numFrames, setNumFrames] = useState(121);
   const [frameRate, setFrameRate] = useState(24);
+  const [width, setWidth] = useState(1920);
+  const [height, setHeight] = useState(1080);
   const [mode, setMode] = useState('standard');
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -66,8 +68,8 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
         prompt: prompt.trim(),
         num_frames: numFrames,
         frame_rate: frameRate,
-        height: 768,
-        width: 1152
+        height: height,
+        width: width
       };
 
       const urls = imageUrls.split(/[\n,]+/).map(u => u.trim()).filter(Boolean);
@@ -370,25 +372,31 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2 flex justify-between items-center">
-                 <span>参数预设</span>
-                 <div className="flex gap-1.5">
-                   {[
-                      { label: '5 秒 (121帧)', f: 121, fps: 24 },
-                      { label: '10 秒 (241帧)', f: 241, fps: 24 },
-                      { label: '18 秒 (441帧)', f: 441, fps: 24 }
-                   ].map(t => (
-                      <button
-                        key={t.label}
-                        onClick={(e) => { e.preventDefault(); setNumFrames(t.f); setFrameRate(t.fps); }}
-                        className="text-[11px] px-2 py-0.5 rounded-[6px] bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#86868b] transition-colors font-normal"
-                      >
-                        {t.label}
-                      </button>
-                   ))}
-                 </div>
-              </label>
+            <div className="col-span-2 space-y-2">
+               <label className="block text-[13px] font-semibold text-[#1d1d1f]">常用比例</label>
+               <div className="flex flex-wrap gap-2">
+                 {[
+                   { label: '1080x1080 (1:1)', w: 1080, h: 1080 },
+                   { label: '1440x1080 (4:3)', w: 1440, h: 1080 },
+                   { label: '1080x1440 (3:4)', w: 1080, h: 1440 },
+                   { label: '1080x1920 (9:16)', w: 1080, h: 1920 },
+                   { label: '1920x1080 (16:9)', w: 1920, h: 1080 },
+                   { label: '3840x2160 (4K)', w: 3840, h: 2160 }
+                 ].map(t => (
+                    <button
+                      key={t.w + 'x' + t.h}
+                      onClick={(e) => { e.preventDefault(); setWidth(t.w); setHeight(t.h); }}
+                      className={cn(
+                        "text-[12px] px-3 py-1.5 rounded-[8px] transition-all font-medium border",
+                        width === t.w && height === t.h 
+                          ? "bg-[#8c52ff] text-white border-[#8c52ff] shadow-sm" 
+                          : "bg-white hover:bg-[#f5f5f7] text-[#1d1d1f] border-[rgba(0,0,0,0.05)]"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                 ))}
+               </div>
             </div>
             <div className="relative">
               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">帧数</label>
@@ -418,6 +426,32 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 onChange={(e) => setFrameRate(Number(e.target.value))}
                 disabled={status === 'loading'}
                 className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频宽度</label>
+              <input
+                type="number"
+                step="64"
+                min="256"
+                max="4096"
+                value={width}
+                onChange={(e) => setWidth(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频高度</label>
+              <input
+                type="number"
+                step="64"
+                min="256"
+                max="4096"
+                value={height}
+                onChange={(e) => setHeight(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               />
             </div>
           </div>

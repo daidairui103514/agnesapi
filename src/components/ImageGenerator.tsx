@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export function ImageGenerator({ apiKey }: { apiKey: string }) {
   const [prompt, setPrompt] = useState('');
-  const [size, setSize] = useState('1024x1024');
+  const [width, setWidth] = useState(1080);
+  const [height, setHeight] = useState(1080);
   const [referenceImage, setReferenceImage] = useState('');
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [resultImage, setResultImage] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
       const body: any = {
         model: 'agnes-image-2.1-flash',
         prompt: prompt.trim(),
-        size,
+        size: `${width}x${height}`,
         extra_body: {
           response_format: 'b64_json'
         }
@@ -197,23 +198,57 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="relative">
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图片比例</label>
-              <select
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
+            <div className="col-span-2 space-y-2">
+               <label className="block text-[13px] font-semibold text-[#1d1d1f]">常用比例</label>
+               <div className="flex flex-wrap gap-2">
+                 {[
+                   { label: '1080x1080 (1:1)', w: 1080, h: 1080 },
+                   { label: '1440x1080 (4:3)', w: 1440, h: 1080 },
+                   { label: '1080x1440 (3:4)', w: 1080, h: 1440 },
+                   { label: '1080x1920 (9:16)', w: 1080, h: 1920 },
+                   { label: '1920x1080 (16:9)', w: 1920, h: 1080 },
+                   { label: '3840x2160 (4K)', w: 3840, h: 2160 }
+                 ].map(t => (
+                    <button
+                      key={t.w + 'x' + t.h}
+                      onClick={(e) => { e.preventDefault(); setWidth(t.w); setHeight(t.h); }}
+                      className={cn(
+                        "text-[12px] px-3 py-1.5 rounded-[8px] transition-all font-medium border",
+                        width === t.w && height === t.h 
+                          ? "bg-[#d95d39] text-white border-[#d95d39] shadow-sm" 
+                          : "bg-white hover:bg-[#f5f5f7] text-[#1d1d1f] border-[rgba(0,0,0,0.05)]"
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                 ))}
+               </div>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像宽度</label>
+              <input
+                type="number"
+                step="64"
+                min="256"
+                max="4096"
+                value={width}
+                onChange={(e) => setWidth(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full pl-4 pr-10 py-3 appearance-none bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
-              >
-                <option value="1024x1024">默认正方形 (1:1)</option>
-                <option value="1024x768">横向宽屏 (4:3)</option>
-                <option value="768x1024">竖向画幅 (3:4)</option>
-                <option value="768x1365">竖屏比例 (9:16)</option>
-                <option value="1152x768">全景宽幅 (16:9)</option>
-              </select>
-              <div className="absolute right-3 top-[38px] pointer-events-none text-[#86868b]">
-                <ChevronDown size={16} />
-              </div>
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像高度</label>
+              <input
+                type="number"
+                step="64"
+                min="256"
+                max="4096"
+                value={height}
+                onChange={(e) => setHeight(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+              />
             </div>
           </div>
 
