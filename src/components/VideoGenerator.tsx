@@ -330,7 +330,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white p-6 sm:p-8 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-6 flex flex-col h-[600px] lg:h-[700px] overflow-y-auto custom-scrollbar"
+          className="bg-white p-5 sm:p-6 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-4 flex flex-col h-[600px] lg:h-[700px] overflow-y-auto custom-scrollbar"
         >
           <div>
             <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">画面描述</label>
@@ -339,12 +339,12 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
               onChange={(e) => setPrompt(e.target.value)}
               disabled={status === 'loading'}
               placeholder="描述您想要生成的视频场景细节，例如：运镜方向、主体动作、光影质感..."
-              className="w-full p-4 bg-[#f5f5f7] border border-transparent rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent min-h-[140px] resize-y disabled:opacity-50 text-[15px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+              className="w-full p-3 bg-[#f5f5f7] border border-transparent rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent min-h-[100px] resize-y disabled:opacity-50 text-[15px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
             />
           </div>
 
           <div>
-             <div className="flex justify-between items-end mb-2">
+             <div className="flex justify-between items-end mb-1.5">
               <label className="block text-[13px] font-semibold text-[#1d1d1f]">图像转视频源图 (选填)</label>
               <div className="relative">
                 <select 
@@ -365,15 +365,15 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
               value={imageUrls}
               onChange={(e) => setImageUrls(e.target.value)}
               disabled={status === 'loading'}
-              rows={2}
-              placeholder="支持贴入图片URL。&#13;&#10;图生视频 / 关键帧 请提供对应数量 URL"
-              className="w-full p-3.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+              rows={1}
+              placeholder="支持贴入图片URL (多图可换行)"
+              className="w-full p-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-3">常用比例</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="col-span-2 sm:col-span-4">
+               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">常用比例</label>
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                  {[
                    { label: '1080x1080 (1:1)', w: 1080, h: 1080 },
@@ -404,7 +404,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 value={numFrames}
                 onChange={(e) => setNumFrames(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full pl-4 pr-10 py-3 appearance-none bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full pl-3 pr-8 py-2.5 appearance-none bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               >
                 <option value={81}>81 帧 (较短)</option>
                 <option value={121}>121 帧 (默认)</option>
@@ -412,7 +412,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 <option value={241}>241 帧</option>
                 <option value={441}>441 帧 (较长)</option>
               </select>
-              <div className="absolute right-3 top-[38px] pointer-events-none text-[#86868b]">
+              <div className="absolute right-2 top-[34px] pointer-events-none text-[#86868b]">
                 <ChevronDown size={16} />
               </div>
             </div>
@@ -425,7 +425,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 value={frameRate}
                 onChange={(e) => setFrameRate(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               />
             </div>
             <div>
@@ -438,7 +438,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 value={width}
                 onChange={(e) => setWidth(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               />
             </div>
             <div>
@@ -451,12 +451,12 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 value={height}
                 onChange={(e) => setHeight(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               />
             </div>
           </div>
 
-          <div className="bg-[#f5f5f7] p-4 rounded-[12px] border border-[rgba(0,0,0,0.05)] flex items-center gap-3 text-[13px] text-[#1d1d1f] mt-auto">
+          <div className="bg-[#f5f5f7] p-3 rounded-[12px] border border-[rgba(0,0,0,0.05)] flex items-center gap-3 text-[13px] text-[#1d1d1f] mt-auto">
             <Clock size={16} className="text-[#86868b]" />
             <span>预估生成视频时长: <strong>{estDuration} 秒</strong></span>
           </div>
@@ -464,7 +464,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
           <button
             onClick={handleGenerate}
             disabled={!prompt.trim() || !apiKey || status === 'loading'}
-            className="w-full py-3.5 bg-[#8c52ff] text-white rounded-full text-[15px] font-medium shadow-sm hover:bg-[#7236ed] disabled:opacity-50 disabled:hover:bg-[#8c52ff] transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full py-3 bg-[#8c52ff] text-white rounded-full text-[15px] font-medium shadow-sm hover:bg-[#7236ed] disabled:opacity-50 disabled:hover:bg-[#8c52ff] transition-all flex items-center justify-center gap-2 mt-2"
           >
             {status === 'loading' ? (
               <>

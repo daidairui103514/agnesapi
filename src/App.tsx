@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Settings, MessageSquare, Image as ImageIcon, Video as VideoIcon, X } from 'lucide-react';
+import { Settings, MessageSquare, Image as ImageIcon, Video as VideoIcon, X, User as UserIcon } from 'lucide-react';
 import { TextGenerator } from './components/TextGenerator';
 import { ImageGenerator } from './components/ImageGenerator';
 import { VideoGenerator } from './components/VideoGenerator';
 import { cn } from './lib/utils';
 import type { ApiSettings } from './types';
+import { useCurrentUser } from './hooks/useCurrentUser';
 
 const TABS = [
   { id: 'text', label: 'Chat', icon: MessageSquare, color: 'text-[#0071e3]' },
@@ -16,10 +17,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>('text');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [userInput, setUserInput] = useState('');
   const [settings, setSettings] = useState<ApiSettings>({ apiKey: '' });
+  const { user, changeUser } = useCurrentUser();
 
   const handleSaveSettings = () => {
     setSettings({ apiKey: apiKeyInput.trim() });
+    changeUser(userInput);
     setIsSettingsOpen(false);
   };
 
@@ -67,6 +71,7 @@ export default function App() {
             <button
               onClick={() => {
                 setApiKeyInput(settings.apiKey);
+                setUserInput(user);
                 setIsSettingsOpen(true);
               }}
               className={cn(
@@ -91,14 +96,17 @@ export default function App() {
         {!settings.apiKey && !isSettingsOpen && (
           <div className="mb-8 p-4 bg-white rounded-2xl border border-[rgba(0,0,0,0.05)] shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p className="font-semibold text-[#1d1d1f] text-[15px]">API 未配置</p>
-              <p className="text-[13px] text-[#86868b] mt-1">请在设置中输入您的 Agnes AI API 密钥以使用完整功能。</p>
+              <p className="font-semibold text-[#1d1d1f] text-[15px]">未配置设置</p>
+              <p className="text-[13px] text-[#86868b] mt-1">请在设置中输入 API 密钥以使用完整功能，并设置账号以便同步云端记录。</p>
             </div>
             <button 
-              onClick={() => setIsSettingsOpen(true)}
+              onClick={() => {
+                setUserInput(user);
+                setIsSettingsOpen(true);
+              }}
               className="px-4 py-2 bg-[#0071e3] text-white text-[13px] font-medium rounded-full hover:bg-[#0077ed] transition w-max shrink-0"
             >
-              配置 API
+              打开设置
             </button>
           </div>
         )}
@@ -115,7 +123,7 @@ export default function App() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#f5f5f7]/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-white rounded-[24px] shadow-[0_16px_64px_rgba(0,0,0,0.12)] w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6">
-              <h2 className="text-[19px] font-semibold text-[#1d1d1f] tracking-tight">API 配置</h2>
+              <h2 className="text-[19px] font-semibold text-[#1d1d1f] tracking-tight">设置</h2>
               <button 
                 onClick={() => setIsSettingsOpen(false)}
                 className="p-1.5 text-[#86868b] bg-[#f5f5f7] hover:bg-[#e8e8ed] hover:text-[#1d1d1f] rounded-full transition"
@@ -134,10 +142,27 @@ export default function App() {
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
                   placeholder="sk-..."
-                  className="w-full p-3.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:bg-white focus:border-[#0071e3]/30 font-mono text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+                  className="w-full p-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:bg-white focus:border-[#0071e3]/30 font-mono text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
                 />
-                <p className="text-[12px] text-[#86868b] mt-2 leading-relaxed">
-                  您的 API 密钥安全地保存在浏览器的本地存储中，不会上传到任何服务器。
+                <p className="text-[11px] text-[#86868b] mt-1 leading-relaxed">
+                  您的 API 密钥仅保存在浏览器本地。
+                </p>
+              </div>
+
+              <div className="space-y-2 mt-5">
+                <label className="block text-[13px] font-medium text-[#1d1d1f] flex items-center gap-1.5">
+                  <UserIcon size={14} className="text-[#86868b]" />
+                  共享账号分配 (选填)
+                </label>
+                <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder="如输入 'allen' 会只查看该名称的历史记录"
+                  className="w-full p-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:bg-white focus:border-[#0071e3]/30 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+                />
+                <p className="text-[11px] text-[#86868b] mt-1 leading-relaxed">
+                  如果多人共用该部署版本，可以通过填入唯一的相同名称(如微信名) 来隔离自己的云端生成记录。不填默认为 default。
                 </p>
               </div>
             </div>

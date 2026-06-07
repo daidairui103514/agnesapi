@@ -1,6 +1,6 @@
 export async function onRequestPost({ request, env }: any) {
   try {
-    const { type, items } = await request.json();
+    const { type, items, user = 'default' } = await request.json();
     if (!Array.isArray(items) || !type) {
       return new Response(JSON.stringify({ error: "Missing type or items array" }), { status: 400 });
     }
@@ -8,8 +8,8 @@ export async function onRequestPost({ request, env }: any) {
     if (items.length > 0) {
       const stmts = items.map((item: any) => 
         env.DB.prepare(
-          "INSERT OR IGNORE INTO history_items (id, type, timestamp, payload) VALUES (?, ?, ?, ?)"
-        ).bind(item.id, type, item.timestamp || Date.now(), JSON.stringify(item))
+          "INSERT OR IGNORE INTO history_items (id, type, user_id, timestamp, payload) VALUES (?, ?, ?, ?, ?)"
+        ).bind(item.id, type, user, item.timestamp || Date.now(), JSON.stringify(item))
       );
       await env.DB.batch(stmts);
     }

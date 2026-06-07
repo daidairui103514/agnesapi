@@ -3,7 +3,7 @@ import path from "path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { historyItems } from "./src/db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { createServer as createViteServer } from "vite";
 
 async function startServer() {
@@ -14,14 +14,21 @@ async function startServer() {
   const sqlite = new Database("sqlite.db");
   
   // Auto-create table if it doesn't exist (simplifies local dev)
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS history_items (
-      id TEXT PRIMARY KEY,
-      type TEXT NOT NULL,
-      timestamp INTEGER NOT NULL,
-      payload TEXT NOT NULL
-    );
-  `);
+  try {
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS history_items (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        user_id TEXT NOT NULL DEFAULT 'default',
+        timestamp INTEGER NOT NULL,
+        payload TEXT NOT NULL
+      );
+    `);
+    // Add user_id column if it doesn't exist (for existing local db)
+    sqlite.exec(`ALTER TABLE history_items ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default';`);
+  } catch (e) {
+    // Ignore duplicate column error on subsequent runs
+  }
   
   const db = drizzle(sqlite);
 
@@ -32,6 +39,7 @@ async function startServer() {
   // Get history
   app.get("/api/history", (req, res) => {
     const type = req.query.type as string;
+    const user = (req.query.user as string) || 'default';
     if (!type) {
       return res.status(400).json({ error: "Missing type parameter" });
     }
@@ -39,7 +47,7 @@ async function startServer() {
     try {
       const results = db.select()
         .from(historyItems)
-        .where(eq(historyItems.type, type))
+        .where(and(eq(historyItems.type, type), eq(historyItems.user_id, user)))
         .orderBy(desc(historyItems.timestamp))
         .all();
       
@@ -52,7 +60,7 @@ async function startServer() {
 
   // Sync a batch of history items (useful for initial migration from LocalStorage)
   app.post("/api/history/sync", (req, res) => {
-    const { type, items } = req.body;
+    const { type, items, user = 'default' } = req.body;
     if (!Array.isArray(items) || !type) {
       return res.status(400).json({ error: "Missing type or items array" });
     }
@@ -61,6 +69,7 @@ async function startServer() {
       const rows = items.map(item => ({
         id: item.id,
         type,
+        user_id: user,
         timestamp: item.timestamp,
         payload: JSON.stringify(item)
       }));
@@ -81,7 +90,7 @@ async function startServer() {
 
   // Save a single history item
   app.post("/api/history", (req, res) => {
-    const { type, item } = req.body;
+    const { type, item, user = 'default' } = req.body;
     
     if (!type || !item || !item.id) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -92,6 +101,7 @@ async function startServer() {
         .values({ 
           id: item.id, 
           type, 
+          user_id: user,
           timestamp: item.timestamp || Date.now(),
           payload: JSON.stringify(item) 
         })
@@ -108,9 +118,10 @@ async function startServer() {
   // Delete a history item
   app.delete("/api/history/:id", (req, res) => {
     const { id } = req.params;
+    const user = (req.query.user as string) || 'default';
     try {
       db.delete(historyItems)
-        .where(eq(historyItems.id, id))
+        .where(and(eq(historyItems.id, id), eq(historyItems.user_id, user)))
         .run();
       res.json({ success: true, id });
     } catch (e: any) {
