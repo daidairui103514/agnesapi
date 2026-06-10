@@ -128,7 +128,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
             }}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all shadow-sm border",
-              showHistory ? "bg-[#d95d39]/10 text-[#d95d39] border-[#d95d39]/20" : "bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] border-[rgba(0,0,0,0.05)]"
+              showHistory ? "bg-[#d95d39]/10 text-[#d95d39] border-[#d95d39]/20" : "bg-white dark:bg-[#1c1c1e] text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]"
             )}
          >
            <History size={14} />
@@ -141,15 +141,15 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
            <motion.div 
              initial={{ opacity: 0, x: -20 }}
              animate={{ opacity: 1, x: 0 }}
-             className="bg-white p-6 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col h-[600px] lg:h-[700px]"
+             className="bg-white dark:bg-[#1c1c1e] p-6 rounded-[24px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col h-[600px] lg:h-[700px]"
            >
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] tracking-tight mb-4 flex items-center gap-2 border-b border-[rgba(0,0,0,0.05)] pb-4">
+              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] tracking-tight mb-4 flex items-center gap-2 border-b border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] pb-4">
                 <History className="text-[#d95d39]" size={18} />
                 图像生成记录
               </h3>
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {history.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-[#86868b]">
+                  <div className="h-full flex flex-col items-center justify-center text-[#86868b] dark:text-[#a1a1a6]">
                     <ImageIcon size={32} className="opacity-20 mb-3" />
                     <p className="text-[14px]">暂无历史记录</p>
                   </div>
@@ -160,22 +160,22 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                        layout
                        initial={{ opacity: 0, y: 10 }}
                        animate={{ opacity: 1, y: 0 }}
-                       className={cn("group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] overflow-hidden transition-all flex h-24 hover:cursor-pointer",
-                          previewItem?.url === item.url ? "bg-white shadow-sm ring-2 ring-[#d95d39]/30" : "bg-[#f5f5f7] hover:bg-white hover:shadow-sm"
+                       className={cn("group relative rounded-[16px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] overflow-hidden transition-all flex h-24 hover:cursor-pointer",
+                          previewItem?.url === item.url ? "bg-white dark:bg-[#1c1c1e] shadow-sm ring-2 ring-[#d95d39]/30" : "bg-[#f5f5f7] dark:bg-[#000000] hover:bg-white dark:hover:bg-[#1c1c1e] hover:shadow-sm"
                        )}
                        onClick={() => {
                          setPreviewItem({url: item.url, prompt: item.prompt});
                        }}
                     >
-                      <img src={item.url} className="w-24 h-24 object-cover shrink-0 bg-[#e8e8ed]" alt={item.prompt} />
+                      <img src={item.url} className="w-24 h-24 object-cover shrink-0 bg-[#e8e8ed] dark:bg-[#2c2c2e]" alt={item.prompt} />
                       <div className="p-3 flex-1 min-w-0 flex flex-col pointer-events-none">
-                         <p className="text-[13px] text-[#1d1d1f] line-clamp-2 flex-1" title={item.prompt}>{item.prompt}</p>
+                         <p className="text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] line-clamp-2 flex-1" title={item.prompt}>{item.prompt}</p>
                          <div className="flex justify-between items-end mt-2">
-                           <span className="text-[11px] text-[#86868b] font-mono">{new Date(item.timestamp).toLocaleString()}</span>
+                           <span className="text-[11px] text-[#86868b] dark:text-[#a1a1a6] font-mono">{new Date(item.timestamp).toLocaleString()}</span>
                            <div className="flex gap-1 pointer-events-auto">
                               <button
                                 onClick={(e) => { e.stopPropagation(); removeHistory(item.id); }}
-                                className="opacity-0 group-hover:opacity-100 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 p-1.5 rounded-full transition-all"
+                                className="opacity-0 group-hover:opacity-100 text-[#86868b] dark:text-[#a1a1a6] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 p-1.5 rounded-full transition-all"
                               >
                                 <X size={14} />
                               </button>
@@ -191,22 +191,22 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white p-6 sm:p-8 rounded-[24px] border border-[rgba(0,0,0,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-6 flex flex-col h-[600px] lg:h-[700px] overflow-y-auto custom-scrollbar"
+          className="bg-white dark:bg-[#1c1c1e] p-6 sm:p-8 rounded-[24px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shadow-[0_8px_30px_rgba(0,0,0,0.04)] space-y-6 flex flex-col h-[600px] lg:h-[700px] overflow-y-auto custom-scrollbar"
         >
           <div>
-            <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">提示词</label>
+            <label className="block text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">提示词</label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={status === 'loading'}
               placeholder="描述您想要生成的画面细节..."
-              className="w-full p-4 bg-[#f5f5f7] border border-transparent rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 focus:border-transparent min-h-[140px] resize-y disabled:opacity-50 text-[15px] text-[#1d1d1f] placeholder-[#86868b] transition-all"
+              className="w-full p-4 bg-[#f5f5f7] dark:bg-[#000000] border border-transparent rounded-[16px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 focus:border-transparent min-h-[140px] resize-y disabled:opacity-50 text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] transition-all"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-               <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-3">常用比例</label>
+               <label className="block text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-3">常用比例</label>
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                  {[
                    { label: '1088x1088 (1:1)', w: 1088, h: 1088 },
@@ -223,7 +223,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                         "text-[12px] py-2 rounded-[8px] transition-all font-medium border flex items-center justify-center font-mono tracking-tight",
                         width === t.w && height === t.h 
                           ? "bg-[#d95d39] text-white border-[#d95d39] shadow-[0_2px_10px_rgba(217,93,57,0.2)]" 
-                          : "bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] border-transparent"
+                          : "bg-[#f5f5f7] dark:bg-[#000000] hover:bg-[#e8e8ed] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-[#f5f5f7] border-transparent"
                       )}
                     >
                       {t.label}
@@ -232,7 +232,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                </div>
             </div>
             <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像宽度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">图像宽度 <span className="font-normal text-[11px] text-[#86868b] dark:text-[#a1a1a6] ml-1">(32/64的倍数)</span></label>
               <input
                 type="number"
                 step="64"
@@ -241,11 +241,11 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                 value={width}
                 onChange={(e) => setWidth(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full px-4 py-3 bg-[#f5f5f7] dark:bg-[#000000] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] transition-all"
               />
             </div>
             <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">图像高度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">图像高度 <span className="font-normal text-[11px] text-[#86868b] dark:text-[#a1a1a6] ml-1">(32/64的倍数)</span></label>
               <input
                 type="number"
                 step="64"
@@ -254,19 +254,19 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                 value={height}
                 onChange={(e) => setHeight(Number(e.target.value))}
                 disabled={status === 'loading'}
-                className="w-full px-4 py-3 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                className="w-full px-4 py-3 bg-[#f5f5f7] dark:bg-[#000000] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2 mt-4">图像灵感 (可选)</label>
+            <label className="block text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2 mt-4">图像灵感 (可选)</label>
             {referenceImage && (referenceImage.startsWith('data:') || referenceImage.startsWith('http')) ? (
-              <div className="relative inline-block border border-[rgba(0,0,0,0.05)] rounded-[16px] overflow-hidden mt-2 p-1 bg-[#f5f5f7]">
-                <img src={referenceImage.split(/[\n,]+/)[0].trim()} alt="Reference" className="h-32 object-contain bg-white rounded-[12px]" />
+              <div className="relative inline-block border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] rounded-[16px] overflow-hidden mt-2 p-1 bg-[#f5f5f7] dark:bg-[#000000]">
+                <img src={referenceImage.split(/[\n,]+/)[0].trim()} alt="Reference" className="h-32 object-contain bg-white dark:bg-[#1c1c1e] rounded-[12px]" />
                 <button
                   onClick={() => setReferenceImage('')}
-                  className="absolute top-3 right-3 p-1.5 bg-white/80 backdrop-blur-md hover:bg-white text-[#1d1d1f] rounded-full shadow-sm transition"
+                  className="absolute top-3 right-3 p-1.5 bg-white dark:bg-[#1c1c1e]/80 backdrop-blur-md hover:bg-white dark:hover:bg-[#1c1c1e] text-[#1d1d1f] dark:text-[#f5f5f7] rounded-full shadow-sm transition"
                 >
                   <X size={14} />
                 </button>
@@ -279,7 +279,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                   disabled={status === 'loading'}
                   rows={2}
                   placeholder="支持贴入图片URL用于图生图，或点击下方上传本地图片..."
-                  className="w-full p-3.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] placeholder-[#86868b] transition-all resize-none"
+                  className="w-full p-3.5 bg-[#f5f5f7] dark:bg-[#000000] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#d95d39]/30 focus:border-transparent disabled:opacity-50 text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b] transition-all resize-none"
                 />
                 <div className="mt-2 flex justify-start">
                   <input
@@ -290,7 +290,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                     className="hidden"
                     id="image-upload"
                   />
-                  <label htmlFor="image-upload" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] rounded-[8px] cursor-pointer text-[12px] font-medium transition-colors">
+                  <label htmlFor="image-upload" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f5f5f7] dark:bg-[#000000] hover:bg-[#e8e8ed] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-[#f5f5f7] rounded-[8px] cursor-pointer text-[12px] font-medium transition-colors">
                     <Upload size={14} />
                     上传本地图片
                   </label>
@@ -324,11 +324,11 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
         )}
 
         {/* Result Display */}
-        <div className="bg-white rounded-[24px] border border-[rgba(0,0,0,0.05)] p-6 sm:p-8 flex flex-col items-center justify-center h-[600px] lg:h-[700px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] relative">
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] p-6 sm:p-8 flex flex-col items-center justify-center h-[600px] lg:h-[700px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] relative">
           <AnimatePresence mode="wait">
           {displayStatus === 'idle' && !displayImage && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#86868b] flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 bg-[#f5f5f7] rounded-full flex items-center justify-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#86868b] dark:text-[#a1a1a6] flex flex-col items-center gap-4 text-center">
+              <div className="w-16 h-16 bg-[#f5f5f7] dark:bg-[#000000] rounded-full flex items-center justify-center">
                  <ImageIcon size={24} className="opacity-50" />
               </div>
               <p className="text-[15px]">生成的图像将在这边呈现</p>
@@ -354,10 +354,10 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
               <img 
                 src={displayImage} 
                 alt="Generated Result" 
-                className="max-w-full max-h-[500px] object-contain rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] bg-white"
+                className="max-w-full max-h-[500px] object-contain rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] bg-white dark:bg-[#1c1c1e]"
               />
               {displayPrompt && (
-                <div className="mt-6 px-4 py-3 bg-[#f5f5f7] rounded-[12px] max-w-full text-[13px] text-[#1d1d1f] shadow-sm max-h-[100px] overflow-y-auto w-[80%] break-words custom-scrollbar">
+                <div className="mt-6 px-4 py-3 bg-[#f5f5f7] dark:bg-[#000000] rounded-[12px] max-w-full text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] shadow-sm max-h-[100px] overflow-y-auto w-[80%] break-words custom-scrollbar">
                   {displayPrompt}
                 </div>
               )}
@@ -367,7 +367,7 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
                   download="agnes-image.png" 
                   target="_blank"
                   rel="noreferrer"
-                  className="bg-white/90 text-[#1d1d1f] px-4 py-2 rounded-full text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all backdrop-blur-sm"
+                  className="bg-white dark:bg-[#1c1c1e]/90 text-[#1d1d1f] dark:text-[#f5f5f7] px-4 py-2 rounded-full text-[13px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all backdrop-blur-sm"
                 >
                   存储图像
                 </a>
