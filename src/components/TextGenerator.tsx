@@ -53,10 +53,13 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
     
     setHistory(prev => {
        const existing = prev.filter((c: any) => c.id !== chatId);
+       const lastAssistantMsg = [...newMessages].reverse().find(m => m.role === 'assistant' && m.model);
+       const historyItemModel = lastAssistantMsg?.model;
        return [{
          id: chatId,
          messages: newMessages,
-         timestamp: Date.now()
+         timestamp: Date.now(),
+         model: historyItemModel
        }, ...existing].slice(0, 50);
     });
     return chatId as string;
@@ -86,6 +89,18 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
       const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
       const targetModel = targetBaseUrl.includes('ranmeng') ? 'gpt-5.5' : 'agnes-2.0-flash';
          
+      const payload: any = {
+        model: targetModel,
+        messages: messagesPayload,
+        stream: true,
+      };
+
+      if (!targetBaseUrl.includes('ranmeng')) {
+        payload.chat_template_kwargs = {
+          enable_thinking: enableThinking
+        };
+      }
+
       const response = await fetch(`/api/proxy`, {
         method: 'POST',
         headers: {
@@ -93,14 +108,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
           'Authorization': `Bearer ${cleanApiKey}`,
           'x-target-url': `${targetBaseUrl}/chat/completions`,
         },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: messagesPayload,
-          stream: true,
-          chat_template_kwargs: {
-            enable_thinking: enableThinking
-          }
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -115,7 +123,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
       
       setMessages((prev) => [
          ...prev,
-         { role: 'assistant', content: '' }
+         { role: 'assistant', content: '', model: targetModel }
       ]);
       
       let isFirstChunk = true;
@@ -264,9 +272,16 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                      <p className="text-[14px] text-[#1d1d1f] truncate font-medium pr-6" title={typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}>
                        {typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}
                      </p>
-                     <p className="text-[12px] text-[#86868b] mt-1">
-                       {new Date(chat.timestamp).toLocaleDateString()} {new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                     </p>
+                     <div className="flex items-center justify-between mt-1">
+                       <p className="text-[12px] text-[#86868b]">
+                         {new Date(chat.timestamp).toLocaleDateString()} {new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                       </p>
+                       {chat.model && (
+                         <span className="text-[10px] text-[#86868b] bg-[#f5f5f7] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,0,0,0.05)] truncate max-w-[80px]">
+                           {chat.model}
+                         </span>
+                       )}
+                     </div>
                      <button
                         onClick={(e) => { e.stopPropagation(); removeHistory(chat.id); if (currentChatId === chat.id) startNewChat(); }}
                         className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1.5 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"
@@ -384,38 +399,46 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                   </div>
                 </motion.div>
                 
-                {/* Message Actions */}
-                {!isLoading && (
-                  <div className={cn(
-                    "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1",
-                    msg.role === 'user' ? "self-end pr-[52px] sm:pr-[60px]" : "self-start pl-[52px] sm:pl-[60px]"
-                  )}>
-                    {msg.role === 'user' ? (
-                      <button onClick={() => handleWithdraw(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] rounded-[6px] text-[#86868b] hover:text-[#1d1d1f] transition">
-                         <Undo2 size={14} />
-                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
-                            撤回重写
-                            <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#1d1d1f]"></div>
+                {/* Message Actions & Meta */}
+                <div className={cn(
+                  "flex items-center gap-1 mt-1",
+                  msg.role === 'user' ? "self-end pr-[52px] sm:pr-[60px]" : "self-start pl-[52px] sm:pl-[60px]"
+                )}>
+                  {msg.role === 'assistant' && msg.model && (
+                    <span className="text-[11px] text-[#86868b] mr-2 border border-[rgba(0,0,0,0.05)] bg-white px-2 py-0.5 rounded-[6px]">
+                      {msg.model}
+                    </span>
+                  )}
+                  
+                  {!isLoading && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {msg.role === 'user' ? (
+                        <button onClick={() => handleWithdraw(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] rounded-[6px] text-[#86868b] hover:text-[#1d1d1f] transition">
+                           <Undo2 size={14} />
+                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
+                              撤回重写
+                              <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#1d1d1f]"></div>
+                           </div>
+                        </button>
+                      ) : (
+                        <button onClick={() => handleRegenerate(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] rounded-[6px] text-[#86868b] hover:text-[#1d1d1f] transition">
+                           <RotateCw size={14} />
+                           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
+                              重新生成
+                              <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#1d1d1f]"></div>
+                           </div>
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteMessage(index)} className="group/action relative p-1.5 hover:bg-[#ff3b30]/10 rounded-[6px] text-[#86868b] hover:text-[#ff3b30] transition">
+                         <Trash2 size={14} />
+                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#ff3b30] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
+                            删除记录
+                            <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#ff3b30]"></div>
                          </div>
                       </button>
-                    ) : (
-                      <button onClick={() => handleRegenerate(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] rounded-[6px] text-[#86868b] hover:text-[#1d1d1f] transition">
-                         <RotateCw size={14} />
-                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
-                            重新生成
-                            <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#1d1d1f]"></div>
-                         </div>
-                      </button>
-                    )}
-                    <button onClick={() => handleDeleteMessage(index)} className="group/action relative p-1.5 hover:bg-[#ff3b30]/10 rounded-[6px] text-[#86868b] hover:text-[#ff3b30] transition">
-                       <Trash2 size={14} />
-                       <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#ff3b30] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
-                          删除记录
-                          <div className="absolute -top-[8px] left-1/2 -translate-x-1/2 border-[4px] border-transparent border-b-[#ff3b30]"></div>
-                       </div>
-                    </button>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
                 </div>
               ))
             )}
