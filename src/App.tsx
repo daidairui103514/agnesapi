@@ -167,8 +167,8 @@ export default function App() {
                   {baseUrlInput.includes('ranmeng') ? (
                     <ul className="space-y-2 text-[12px] text-[#86868b]">
                       <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#34c759]" /> 文本生成: <strong className="text-[#1d1d1f] ml-0.5">gpt-5.5</strong></li>
-                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#34c759]" /> 图像生成: <strong className="text-[#1d1d1f] ml-0.5">gpt-5.5</strong></li>
-                      <li className="flex items-center gap-1.5"><X size={13} className="text-[#ff3b30]" /> 视频生成: <span className="ml-0.5 opacity-80">暂未专门适配</span></li>
+                      <li className="flex items-center gap-1.5"><X size={13} className="text-[#ff3b30]" /> 图像生成: <span className="ml-0.5 opacity-80">不支持 (仅限 Agnes API)</span></li>
+                      <li className="flex items-center gap-1.5"><X size={13} className="text-[#ff3b30]" /> 视频生成: <span className="ml-0.5 opacity-80">不支持 (仅限 Agnes API)</span></li>
                     </ul>
                   ) : (
                     <ul className="space-y-2 text-[12px] text-[#86868b]">
@@ -182,7 +182,7 @@ export default function App() {
 
               <div className="space-y-2 mt-5">
                 <label className="block text-[13px] font-medium text-[#1d1d1f]">
-                  API Key
+                  网站密码 / API Key
                 </label>
                 <input
                   type="password"

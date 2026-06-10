@@ -42,9 +42,13 @@ export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
       const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
-      const targetModel = targetBaseUrl.includes('ranmeng') ? 'gpt-5.5' : 'agnes-image-2.1-flash';
+      
+      if (targetBaseUrl.includes('ranmeng')) {
+        throw new Error('此接口不支持图像生成，请切换至默认的 Agnes API');
+      }
+
       const body: any = {
-        model: targetModel,
+        model: 'agnes-image-2.1-flash',
         prompt: prompt.trim(),
         size: `${width}x${height}`,
         extra_body: {

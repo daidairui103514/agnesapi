@@ -138,12 +138,36 @@ async function startServer() {
     }
     
     try {
+      const authHeader = req.headers.authorization || "";
+      const sitePassword = process.env.SITE_PASSWORD || "";
+      
+      let actualApiKey = "";
+
+      if (sitePassword) {
+        // If SITE_PASSWORD is set, the authorization header MUST match the site password
+        const providedPassword = (authHeader || "").replace(/^Bearer\s+/i, "");
+        if (providedPassword.trim() !== sitePassword.trim()) {
+          return res.status(401).json({ error: "Invalid Site Password" });
+        }
+      }
+
+      if (targetUrl.includes('ranmeng') && process.env.RANMENG_API_KEY) {
+        actualApiKey = process.env.RANMENG_API_KEY;
+      } else if (process.env.AGNES_API_KEY) {
+        actualApiKey = process.env.AGNES_API_KEY;
+      } else {
+        // Fallback to taking the key from the frontend if no env var is set
+        actualApiKey = authHeader.replace(/^Bearer\s+/i, "");
+      }
+      
+      const upstreamAuthHeader = actualApiKey ? `Bearer ${actualApiKey}` : authHeader;
+
       // We will perform the fetch from the server-side to bypass CORS
       const fetchOptions: RequestInit = {
         method: req.method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": req.headers.authorization || "",
+          "Authorization": upstreamAuthHeader,
         }
       };
 

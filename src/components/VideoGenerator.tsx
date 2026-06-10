@@ -63,6 +63,12 @@ export function VideoGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
 
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+
+      if (targetBaseUrl.includes('ranmeng')) {
+        throw new Error('此接口不支持视频生成，请切换至默认的 Agnes API');
+      }
+
       const body: any = {
         model: 'agnes-video-v2.0',
         prompt: prompt.trim(),
@@ -86,8 +92,6 @@ export function VideoGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: 
           body.image = urls[0];
         }
       }
-
-      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
 
       const response = await fetch(`/api/proxy`, {
         method: 'POST',
