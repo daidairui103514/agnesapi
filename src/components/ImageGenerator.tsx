@@ -6,7 +6,7 @@ import { useHistory } from '../hooks/useHistory';
 import { v4 as uuidv4 } from 'uuid';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function ImageGenerator({ apiKey }: { apiKey: string }) {
+export function ImageGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: string }) {
   const [prompt, setPrompt] = useState('');
   const [width, setWidth] = useState(1088);
   const [height, setHeight] = useState(1088);
@@ -41,8 +41,10 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
 
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
+      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+      const targetModel = targetBaseUrl.includes('ranmeng') ? 'gpt-5.5' : 'agnes-image-2.1-flash';
       const body: any = {
-        model: 'agnes-image-2.1-flash',
+        model: targetModel,
         prompt: prompt.trim(),
         size: `${width}x${height}`,
         extra_body: {
@@ -61,11 +63,12 @@ export function ImageGenerator({ apiKey }: { apiKey: string }) {
         }
       }
 
-      const response = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
+      const response = await fetch(`/api/proxy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${cleanApiKey}`,
+          'x-target-url': `${targetBaseUrl}/images/generations`,
         },
         body: JSON.stringify(body),
       });

@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ChatMessage, ChatHistoryItem } from '../types';
 
-export function TextGenerator({ apiKey }: { apiKey: string }) {
+export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: string }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [input, setInput] = useState('');
@@ -21,15 +21,18 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
   
   const { history, addHistory, removeHistory, setHistory } = useHistory<ChatHistoryItem>('agnes_chat_history');
   
+  const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+  const displayModel = targetBaseUrl.includes('ranmeng') ? 'gpt-5.5' : 'agnes-2.0-flash';
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (instant?: boolean) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    scrollToBottom(isLoading);
+  }, [messages, isLoading]);
 
   const startNewChat = () => {
     setMessages([]);
@@ -80,14 +83,18 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
          ? [{ role: 'system', content: systemPrompt }, ...initialMessages] 
          : initialMessages;
          
-      const response = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
+      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+      const targetModel = targetBaseUrl.includes('ranmeng') ? 'gpt-5.5' : 'agnes-2.0-flash';
+         
+      const response = await fetch(`/api/proxy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${cleanApiKey}`,
+          'x-target-url': `${targetBaseUrl}/chat/completions`,
         },
         body: JSON.stringify({
-          model: 'agnes-2.0-flash',
+          model: targetModel,
           messages: messagesPayload,
           stream: true,
           chat_template_kwargs: {
@@ -112,17 +119,20 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
       ]);
       
       let isFirstChunk = true;
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        
+        buffer = lines.pop() || '';
         
         for (const line of lines) {
-           if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+           if (line.trim().startsWith('data: ') && !line.includes('[DONE]')) {
              try {
-               const parsed = JSON.parse(line.slice(6));
+               const parsed = JSON.parse(line.trim().slice(6));
                
                if (parsed.choices?.[0]?.delta?.content) {
                  assistantMessageContent += parsed.choices[0].delta.content;
@@ -134,7 +144,7 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
                  });
                  
                  if (isFirstChunk) {
-                    scrollToBottom();
+                    scrollToBottom(true);
                     isFirstChunk = false;
                  }
                }
@@ -288,7 +298,7 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
            </button>
            <div className="text-[13px] font-mono font-medium text-[#86868b] flex items-center gap-1.5 px-3 py-1 bg-[#f5f5f7] rounded-full">
               <Bot size={14} />
-              agnes-2.0-flash
+              {displayModel}
            </div>
         </div>
 
@@ -317,7 +327,7 @@ export function TextGenerator({ apiKey }: { apiKey: string }) {
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center pt-[20vh] text-[#86868b] space-y-4">
                 <Bot size={48} className="opacity-20 mb-2" />
-                <p className="text-[15px] text-[#1d1d1f] font-medium mb-4">开始与 agnes-2.0-flash 的对话</p>
+                <p className="text-[15px] text-[#1d1d1f] font-medium mb-4">开始与 {displayModel} 的对话</p>
               </div>
             ) : (
               messages.map((msg, index) => (

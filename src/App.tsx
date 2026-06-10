@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, MessageSquare, Image as ImageIcon, Video as VideoIcon, X, User as UserIcon } from 'lucide-react';
+import { Settings, MessageSquare, Image as ImageIcon, Video as VideoIcon, X, User as UserIcon, Bot, Sparkles, CheckCircle2 } from 'lucide-react';
 import { TextGenerator } from './components/TextGenerator';
 import { ImageGenerator } from './components/ImageGenerator';
 import { VideoGenerator } from './components/VideoGenerator';
@@ -17,15 +17,20 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<typeof TABS[number]['id']>('text');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [baseUrlInput, setBaseUrlInput] = useState('https://apihub.agnes-ai.com/v1');
   const [userInput, setUserInput] = useState('');
-  const [settings, setSettings] = useState<ApiSettings>({ apiKey: '' });
+  const [settings, setSettings] = useState<ApiSettings>({ apiKey: '', baseUrl: 'https://apihub.agnes-ai.com/v1' });
   const { user, changeUser } = useCurrentUser();
 
   const handleSaveSettings = () => {
-    setSettings({ apiKey: apiKeyInput.trim() });
+    setSettings({ 
+      apiKey: apiKeyInput.trim(),
+      baseUrl: baseUrlInput
+    });
     changeUser(userInput);
     setIsSettingsOpen(false);
   };
+
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans selection:bg-[#0071e3]/30 flex flex-col">
@@ -71,6 +76,7 @@ export default function App() {
             <button
               onClick={() => {
                 setApiKeyInput(settings.apiKey);
+                setBaseUrlInput(settings.baseUrl || 'https://apihub.agnes-ai.com/v1');
                 setUserInput(user);
                 setIsSettingsOpen(true);
               }}
@@ -101,6 +107,8 @@ export default function App() {
             </div>
             <button 
               onClick={() => {
+                setApiKeyInput(settings.apiKey);
+                setBaseUrlInput(settings.baseUrl || 'https://apihub.agnes-ai.com/v1');
                 setUserInput(user);
                 setIsSettingsOpen(true);
               }}
@@ -112,9 +120,9 @@ export default function App() {
         )}
 
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative flex-1">
-          <div className={activeTab === 'text' ? 'block h-full' : 'hidden'}><TextGenerator apiKey={settings.apiKey} /></div>
-          <div className={activeTab === 'image' ? 'block h-full' : 'hidden'}><ImageGenerator apiKey={settings.apiKey} /></div>
-          <div className={activeTab === 'video' ? 'block h-full' : 'hidden'}><VideoGenerator apiKey={settings.apiKey} /></div>
+          <div className={activeTab === 'text' ? 'block h-full' : 'hidden'}><TextGenerator apiKey={settings.apiKey} baseUrl={settings.baseUrl} /></div>
+          <div className={activeTab === 'image' ? 'block h-full' : 'hidden'}><ImageGenerator apiKey={settings.apiKey} baseUrl={settings.baseUrl} /></div>
+          <div className={activeTab === 'video' ? 'block h-full' : 'hidden'}><VideoGenerator apiKey={settings.apiKey} baseUrl={settings.baseUrl} /></div>
         </div>
       </main>
 
@@ -135,7 +143,46 @@ export default function App() {
             <div className="px-6 pb-6">
               <div className="space-y-2">
                 <label className="block text-[13px] font-medium text-[#1d1d1f]">
-                  Agnes API Key
+                  Base URL
+                </label>
+                <div className="relative">
+                  <select 
+                    value={baseUrlInput}
+                    onChange={(e) => setBaseUrlInput(e.target.value)}
+                    className="w-full p-3 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:bg-white focus:border-[#0071e3]/30 text-[14px] text-[#1d1d1f] transition-all appearance-none pr-10"
+                  >
+                    <option value="https://apihub.agnes-ai.com/v1">Agnes API (默认)</option>
+                    <option value="https://api.ranmeng.icu/v1">Ranmeng API (gpt-5.5)</option>
+                  </select>
+                  <div className="absolute right-3 top-[14px] pointer-events-none text-[#86868b]">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                  </div>
+                </div>
+                
+                <div className="mt-3 bg-[#f5f5f7] p-3.5 rounded-[12px] border border-[rgba(0,0,0,0.03)]">
+                  <h4 className="text-[12.5px] font-semibold text-[#1d1d1f] mb-2.5 flex items-center gap-1.5 border-b border-[rgba(0,0,0,0.05)] pb-2">
+                    <Bot size={15} className="text-[#0071e3]" />
+                    已选接口支持模型
+                  </h4>
+                  {baseUrlInput.includes('ranmeng') ? (
+                    <ul className="space-y-2 text-[12px] text-[#86868b]">
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#34c759]" /> 文本生成: <strong className="text-[#1d1d1f] ml-0.5">gpt-5.5</strong></li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#34c759]" /> 图像生成: <strong className="text-[#1d1d1f] ml-0.5">gpt-5.5</strong></li>
+                      <li className="flex items-center gap-1.5"><X size={13} className="text-[#ff3b30]" /> 视频生成: <span className="ml-0.5 opacity-80">暂未专门适配</span></li>
+                    </ul>
+                  ) : (
+                    <ul className="space-y-2 text-[12px] text-[#86868b]">
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#0071e3]" /> <span className="w-[52px]">文本生成:</span> <strong className="text-[#1d1d1f]">agnes-2.0-flash</strong> <span className="text-[10px] bg-[#d2d2d7]/40 px-1.5 py-0.5 rounded ml-1">支持深度思考</span></li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#0071e3]" /> <span className="w-[52px]">图像生成:</span> <strong className="text-[#1d1d1f]">agnes-image-2.1-flash</strong></li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-[#0071e3]" /> <span className="w-[52px]">视频生成:</span> <strong className="text-[#1d1d1f]">agnes-video-1.0</strong></li>
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 mt-5">
+                <label className="block text-[13px] font-medium text-[#1d1d1f]">
+                  API Key
                 </label>
                 <input
                   type="password"

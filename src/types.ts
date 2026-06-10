@@ -1,5 +1,6 @@
 export interface ApiSettings {
   apiKey: string;
+  baseUrl?: string;
 }
 
 export type GenerationStatus = 'idle' | 'loading' | 'success' | 'error';

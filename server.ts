@@ -130,6 +130,66 @@ async function startServer() {
     }
   });
 
+  // --- Proxy Route ---
+  app.all("/api/proxy", async (req, res) => {
+    const targetUrl = req.headers['x-target-url'] as string;
+    if (!targetUrl) {
+      return res.status(400).json({ error: "Missing x-target-url header" });
+    }
+    
+    try {
+      // We will perform the fetch from the server-side to bypass CORS
+      const fetchOptions: RequestInit = {
+        method: req.method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": req.headers.authorization || "",
+        }
+      };
+
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        fetchOptions.body = JSON.stringify(req.body);
+      }
+
+      const fetchResponse = await fetch(targetUrl, fetchOptions);
+
+      res.status(fetchResponse.status);
+      
+      // Pass through relevant headers
+      fetchResponse.headers.forEach((value, key) => {
+        // avoid breaking express by setting certain headers
+        if (!['content-encoding', 'content-length', 'connection', 'transfer-encoding'].includes(key.toLowerCase())) {
+          res.setHeader(key, value);
+        }
+      });
+
+      // Stream the response back to the client
+      if (fetchResponse.body) {
+        const reader = fetchResponse.body.getReader();
+        const pump = async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              res.write(value);
+            }
+            res.end();
+          } catch (err) {
+            console.error("Proxy streaming error", err);
+            res.end();
+          }
+        };
+        pump();
+      } else {
+        res.end();
+      }
+    } catch (e: any) {
+      console.error("Proxy error:", e);
+      res.status(500).json({ error: e.message || "Proxy fetch failed" });
+    }
+  });
+
+
 
   // --- Vite Middleware (Development) / Static Files (Production) ---
   if (process.env.NODE_ENV !== "production") {

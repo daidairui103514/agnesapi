@@ -6,7 +6,7 @@ import { useHistory } from '../hooks/useHistory';
 import { v4 as uuidv4 } from 'uuid';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function VideoGenerator({ apiKey }: { apiKey: string }) {
+export function VideoGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: string }) {
   const [prompt, setPrompt] = useState('');
   const [imageUrls, setImageUrls] = useState('');
   const [numFrames, setNumFrames] = useState(121);
@@ -87,11 +87,14 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
         }
       }
 
-      const response = await fetch('https://apihub.agnes-ai.com/v1/videos', {
+      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+
+      const response = await fetch(`/api/proxy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${cleanApiKey}`,
+          'x-target-url': `${targetBaseUrl}/videos`,
         },
         body: JSON.stringify(body),
       });
@@ -122,10 +125,12 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
   const checkStatus = async (currentTaskId: string) => {
     try {
       const cleanApiKey = apiKey.replace(/[^\x20-\x7E]/g, '').trim();
-      const response = await fetch(`https://apihub.agnes-ai.com/v1/videos/${currentTaskId}`, {
+      const targetBaseUrl = baseUrl || 'https://apihub.agnes-ai.com/v1';
+      const response = await fetch(`/api/proxy`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${cleanApiKey}`,
+          'x-target-url': `${targetBaseUrl}/videos/${currentTaskId}`,
         }
       });
 
@@ -428,44 +433,48 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
                 className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
               />
             </div>
-            <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频宽度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
-              <input
-                type="number"
-                step="64"
-                min="256"
-                max="4096"
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                disabled={status === 'loading'}
-                className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频高度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
-              <input
-                type="number"
-                step="64"
-                min="256"
-                max="4096"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                disabled={status === 'loading'}
-                className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
-              />
-            </div>
           </div>
 
-          <div className="bg-[#f5f5f7] p-3 rounded-[12px] border border-[rgba(0,0,0,0.05)] flex items-center gap-3 text-[13px] text-[#1d1d1f] mt-auto">
-            <Clock size={16} className="text-[#86868b]" />
-            <span>预估生成视频时长: <strong>{estDuration} 秒</strong></span>
-          </div>
+          <div className="mt-auto space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频宽度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
+                <input
+                  type="number"
+                  step="64"
+                  min="256"
+                  max="4096"
+                  value={width}
+                  onChange={(e) => setWidth(Number(e.target.value))}
+                  disabled={status === 'loading'}
+                  className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">视频高度 <span className="font-normal text-[11px] text-[#86868b] ml-1">(32/64的倍数)</span></label>
+                <input
+                  type="number"
+                  step="64"
+                  min="256"
+                  max="4096"
+                  value={height}
+                  onChange={(e) => setHeight(Number(e.target.value))}
+                  disabled={status === 'loading'}
+                  className="w-full px-3 py-2.5 bg-[#f5f5f7] border border-[rgba(0,0,0,0.05)] rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#8c52ff]/30 disabled:opacity-50 text-[14px] text-[#1d1d1f] transition-all"
+                />
+              </div>
+            </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={!prompt.trim() || !apiKey || status === 'loading'}
-            className="w-full py-3 bg-[#8c52ff] text-white rounded-full text-[15px] font-medium shadow-sm hover:bg-[#7236ed] disabled:opacity-50 disabled:hover:bg-[#8c52ff] transition-all flex items-center justify-center gap-2 mt-2"
-          >
+            <div className="bg-[#f5f5f7] p-3 rounded-[12px] border border-[rgba(0,0,0,0.05)] flex items-center gap-3 text-[13px] text-[#1d1d1f]">
+              <Clock size={16} className="text-[#86868b]" />
+              <span>预估生成视频时长: <strong>{estDuration} 秒</strong></span>
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={!prompt.trim() || !apiKey || status === 'loading'}
+              className="w-full py-3 bg-[#8c52ff] text-white rounded-full text-[15px] font-medium shadow-sm hover:bg-[#7236ed] disabled:opacity-50 disabled:hover:bg-[#8c52ff] transition-all flex items-center justify-center gap-2"
+            >
             {status === 'loading' ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
@@ -482,6 +491,7 @@ export function VideoGenerator({ apiKey }: { apiKey: string }) {
           {!apiKey && (
              <p className="text-[12px] text-[#ff3b30] text-center font-medium">需要配置 API Key 才能生成视频</p>
           )}
+          </div>
         </motion.div>
         )}
 
