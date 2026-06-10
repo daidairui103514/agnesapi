@@ -130,6 +130,26 @@ async function startServer() {
     }
   });
 
+  // --- API Config Route ---
+  app.get("/api/config", (req, res) => {
+    res.json({
+      requirePassword: !!process.env.SITE_PASSWORD,
+      hasAgnesKey: !!process.env.AGNES_API_KEY,
+      hasRanmengKey: !!process.env.RANMENG_API_KEY
+    });
+  });
+
+  app.post("/api/verify-password", express.json(), (req, res) => {
+    const sitePassword = process.env.SITE_PASSWORD || "";
+    if (!sitePassword) return res.json({ success: true });
+    
+    if (req.body.password === sitePassword) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ success: false });
+    }
+  });
+
   // --- Proxy Route ---
   app.all("/api/proxy", async (req, res) => {
     const targetUrl = req.headers['x-target-url'] as string;
@@ -151,13 +171,10 @@ async function startServer() {
         }
       }
 
-      if (targetUrl.includes('ranmeng') && process.env.RANMENG_API_KEY) {
-        actualApiKey = process.env.RANMENG_API_KEY;
-      } else if (process.env.AGNES_API_KEY) {
-        actualApiKey = process.env.AGNES_API_KEY;
+      if (targetUrl.includes('ranmeng')) {
+        actualApiKey = process.env.RANMENG_API_KEY || authHeader.replace(/^Bearer\s+/i, "");
       } else {
-        // Fallback to taking the key from the frontend if no env var is set
-        actualApiKey = authHeader.replace(/^Bearer\s+/i, "");
+        actualApiKey = process.env.AGNES_API_KEY || authHeader.replace(/^Bearer\s+/i, "");
       }
       
       const upstreamAuthHeader = actualApiKey ? `Bearer ${actualApiKey}` : authHeader;
