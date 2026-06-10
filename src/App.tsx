@@ -37,7 +37,10 @@ export default function App() {
     setBaseUrlInput(savedBaseUrl);
 
     fetch('/api/config')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch config");
+        return res.json();
+      })
       .then(async data => {
         const hasServerKey = data.hasAgnesKey || data.hasRanmengKey;
         if (data.requirePassword && savedApiKey) {
@@ -55,6 +58,11 @@ export default function App() {
         } else {
           setConfig({ loaded: true, requirePassword: !!data.requirePassword, hasServerKey });
         }
+      })
+      .catch((e) => {
+        console.error("Config fetch failed:", e);
+        // Fallback if the API endpoint isn't working (e.g. static host without functions running properly)
+        setConfig({ loaded: true, requirePassword: false, hasServerKey: false });
       });
   }, []);
 
