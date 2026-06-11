@@ -233,7 +233,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
 
 
   return (
-    <div className="flex h-[calc(100vh-140px)] max-h-[800px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] rounded-[20px] overflow-hidden bg-white dark:bg-[#1c1c1e] shadow-[0_8px_32px_rgba(0,0,0,0.04)] relative">
+    <div className="flex h-[calc(100vh-140px)] max-h-[800px] border border-[rgba(0,0,0,0.05)] dark:border-white/10 rounded-[20px] overflow-hidden bg-white dark:bg-[#09090b] shadow-[0_8px_32px_rgba(0,0,0,0.04)] relative">
       {/* Sidebar */}
       <AnimatePresence>
         {showSidebar && (
@@ -241,12 +241,12 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
              initial={{ width: 0, opacity: 0 }}
              animate={{ width: 280, opacity: 1 }}
              exit={{ width: 0, opacity: 0 }}
-             className="border-r border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] bg-[#f5f5f7] dark:bg-[#000000] flex flex-col shrink-0 overflow-hidden"
+             className="border-r border-[rgba(0,0,0,0.05)] dark:border-white/10 bg-[#f5f5f7] dark:bg-[#18181b] flex flex-col shrink-0 overflow-hidden"
           >
             <div className="p-4 flex items-center justify-between">
               <button 
                 onClick={startNewChat}
-                className="flex items-center gap-2 text-[13px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-white dark:hover:bg-[#1c1c1e] hover:shadow-sm px-4 py-2.5 rounded-full w-full transition-all border border-transparent hover:border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]"
+                className="flex items-center gap-2 text-[13px] font-semibold text-[#1d1d1f] dark:text-[#fafafa] hover:bg-white dark:hover:bg-[#18181b] hover:shadow-sm px-4 py-2.5 rounded-full w-full transition-all border border-transparent hover:border-[rgba(0,0,0,0.05)] dark:border-white/10"
               >
                 <Plus size={16} />
                 新建对话
@@ -255,46 +255,41 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar space-y-1">
                <AnimatePresence initial={false}>
                  {history.length === 0 ? (
-                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-4 py-8 text-center text-[13px] text-[#86868b] dark:text-[#a1a1a6]">
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-4 py-8 text-center text-[13px] text-[#86868b] dark:text-[#a1a1aa]">
                       暂无对话记录
                    </motion.div>
                  ) : (
                    history.map(chat => (
-                     <motion.div 
+                     <div 
                         key={chat.id} 
-                        layout
-                        initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                        exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
                         className={cn(
                           "group flex flex-col p-3 rounded-2xl cursor-pointer transition-all border max-w-full relative",
                           currentChatId === chat.id 
-                             ? "bg-white dark:bg-[#1c1c1e] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]" 
+                             ? "bg-white dark:bg-[#09090b] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-[rgba(0,0,0,0.05)] dark:border-white/10" 
                              : "bg-transparent border-transparent hover:bg-[rgba(0,0,0,0.04)]"
                         )}
                         onClick={() => loadChat(chat)}
                      >
-                       <p className="text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate font-medium pr-6" title={typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}>
+                       <p className="text-[14px] text-[#1d1d1f] dark:text-[#fafafa] truncate font-medium pr-6" title={typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}>
                          {typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}
                        </p>
                        <div className="flex items-center justify-between mt-1">
-                         <p className="text-[12px] text-[#86868b] dark:text-[#a1a1a6]">
+                         <p className="text-[12px] text-[#86868b] dark:text-[#a1a1aa]">
                            {new Date(chat.timestamp).toLocaleDateString()} {new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                          </p>
                          {chat.model && (
-                           <span className="text-[10px] text-[#86868b] dark:text-[#a1a1a6] bg-[#f5f5f7] dark:bg-[#000000] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] truncate max-w-[80px]">
+                           <span className="text-[10px] text-[#86868b] dark:text-[#a1a1aa] bg-[#f5f5f7] dark:bg-[#18181b] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,0,0,0.05)] dark:border-white/10 truncate max-w-[80px]">
                              {chat.model}
                            </span>
                          )}
                        </div>
                        <button
                           onClick={(e) => { e.stopPropagation(); removeHistory(chat.id); if (currentChatId === chat.id) startNewChat(); }}
-                          className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1.5 text-[#86868b] dark:text-[#a1a1a6] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"
+                          className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1.5 text-[#86868b] dark:text-[#a1a1aa] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"
                        >
                          <X size={14} />
                        </button>
-                     </motion.div>
+                     </div>
                    ))
                  )}
                </AnimatePresence>
@@ -303,22 +298,22 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1c1c1e] relative">
-        <div className="flex justify-between items-center px-4 py-3 bg-white dark:bg-[#1c1c1e]/80 backdrop-blur-xl z-20 shrink-0 border-b border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#09090b] relative">
+        <div className="flex justify-between items-center px-4 py-3 bg-white dark:bg-[#09090b]/80 backdrop-blur-xl z-20 shrink-0 border-b border-[rgba(0,0,0,0.05)] dark:border-white/10">
            <button 
              onClick={() => setShowSidebar(!showSidebar)}
-             className="text-[#86868b] dark:text-[#a1a1a6] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] p-2 rounded-full transition"
+             className="text-[#86868b] dark:text-[#a1a1aa] hover:text-[#1d1d1f] dark:hover:text-[#fafafa] hover:bg-[#f5f5f7] dark:hover:bg-[#27272a] p-2 rounded-full transition"
            >
              <History size={20} />
            </button>
            <button 
              onClick={() => setShowPersona(!showPersona)}
-             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition ${showPersona ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'bg-[#f5f5f7] dark:bg-[#000000] text-[#86868b] dark:text-[#a1a1a6] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7]'}`}
+             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition ${showPersona ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'bg-[#f5f5f7] dark:bg-[#18181b] text-[#86868b] dark:text-[#a1a1aa] hover:text-[#1d1d1f] dark:hover:text-[#fafafa]'}`}
            >
              <Settings2 size={16} />
              系统人设
            </button>
-           <div className="text-[13px] font-mono font-medium text-[#86868b] dark:text-[#a1a1a6] flex items-center gap-1.5 px-3 py-1 bg-[#f5f5f7] dark:bg-[#000000] rounded-full">
+           <div className="text-[13px] font-mono font-medium text-[#86868b] dark:text-[#a1a1aa] flex items-center gap-1.5 px-3 py-1 bg-[#f5f5f7] dark:bg-[#18181b] rounded-full">
               <Bot size={14} />
               {displayModel}
            </div>
@@ -335,7 +330,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                         onClick={() => document.getElementById(`msg-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         className="w-2 h-2 rounded-full bg-[#0071e3]/30 hover:bg-[#0071e3] transition-all"
                       />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 pointer-events-none bg-white dark:bg-[#1c1c1e] text-[#1d1d1f] dark:text-[#f5f5f7] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-[12px] px-2.5 py-1.5 rounded-[8px] whitespace-nowrap translate-x-2 group-hover:translate-x-0 transition-all max-w-[200px] truncate font-medium">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 pointer-events-none bg-white dark:bg-[#09090b] text-[#1d1d1f] dark:text-[#fafafa] border border-[rgba(0,0,0,0.05)] dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.08)] text-[12px] px-2.5 py-1.5 rounded-[8px] whitespace-nowrap translate-x-2 group-hover:translate-x-0 transition-all max-w-[200px] truncate font-medium">
                         {typeof msg.content === 'string' ? msg.content : (msg.content.find((p: any) => p.type === 'text')?.text || '图片')}
                       </div>
                    </div>
@@ -347,9 +342,9 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="max-w-4xl mx-auto w-full pb-8 flex flex-col space-y-6">
               {messages.length === 0 ? (
-                <div key="empty" className="h-full flex flex-col items-center pt-[20vh] text-[#86868b] dark:text-[#a1a1a6] space-y-4">
+                <div key="empty" className="h-full flex flex-col items-center pt-[20vh] text-[#86868b] dark:text-[#a1a1aa] space-y-4">
                   <Bot size={48} className="opacity-20 mb-2" />
-                  <p className="text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] font-medium mb-4">开始与 {displayModel} 的对话</p>
+                  <p className="text-[15px] text-[#1d1d1f] dark:text-[#fafafa] font-medium mb-4">开始与 {displayModel} 的对话</p>
                 </div>
               ) : (
                 messages.map((msg, index) => (
@@ -367,7 +362,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                   <div
                     className={cn(
                       "p-2 rounded-full shrink-0 mt-1",
-                      msg.role === 'user' ? "text-[#0071e3] bg-[#0071e3]/10 hidden sm:block" : "text-[#1d1d1f] dark:text-[#f5f5f7] bg-[#f5f5f7] dark:bg-[#000000]"
+                      msg.role === 'user' ? "text-[#0071e3] bg-[#0071e3]/10 hidden sm:block" : "text-[#1d1d1f] dark:text-[#fafafa] bg-[#f5f5f7] dark:bg-[#18181b]"
                     )}
                   >
                     {msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}
@@ -377,7 +372,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                       "py-3 px-5 rounded-[20px] max-w-[85%] overflow-hidden leading-relaxed relative",
                       msg.role === 'user'
                         ? "bg-[#0071e3] text-white rounded-tr-[4px] shadow-sm ml-auto"
-                        : "bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] rounded-tl-[4px]"
+                        : "bg-[#f5f5f7] dark:bg-[#18181b] text-[#1d1d1f] dark:text-[#fafafa] rounded-tl-[4px]"
                     )}
                   >
                     {msg.role === 'user' ? (
@@ -388,15 +383,15 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                           <div className="flex flex-col gap-2">
                             <div className="whitespace-pre-wrap">{msg.content.find((p: any) => p.type === 'text')?.text}</div>
                             {msg.content.find((p: any) => p.type === 'image_url') && (
-                              <img src={msg.content.find((p: any) => p.type === 'image_url')?.image_url?.url} alt="User Upload" className="max-w-full max-h-[300px] rounded-[12px] object-contain shadow-sm border border-[rgba(255,255,255,0.2)] mt-1 bg-white dark:bg-[#1c1c1e]/10" />
+                              <img src={msg.content.find((p: any) => p.type === 'image_url')?.image_url?.url} alt="User Upload" className="max-w-full max-h-[300px] rounded-[12px] object-contain shadow-sm border border-[rgba(255,255,255,0.2)] mt-1 bg-white dark:bg-[#09090b]/10" />
                             )}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="markdown-body prose prose-sm max-w-none text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] prose-p:leading-relaxed">
+                      <div className="markdown-body prose prose-sm max-w-none text-[15px] text-[#1d1d1f] dark:text-[#fafafa] prose-p:leading-relaxed">
                         {isLoading && msg.content === '' && index === messages.length - 1 ? (
-                           <div className="flex items-center gap-2 text-[#86868b] dark:text-[#a1a1a6] min-h-[24px]">
+                           <div className="flex items-center gap-2 text-[#86868b] dark:text-[#a1a1aa] min-h-[24px]">
                              <Loader2 size={16} className="animate-spin" />
                              <span className="text-[14px]">正在思考...</span>
                            </div>
@@ -414,7 +409,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                   msg.role === 'user' ? "self-end pr-[52px] sm:pr-[60px]" : "self-start pl-[52px] sm:pl-[60px]"
                 )}>
                   {msg.role === 'assistant' && msg.model && (
-                    <span className="text-[11px] text-[#86868b] dark:text-[#a1a1a6] mr-2 border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] bg-white dark:bg-[#1c1c1e] px-2 py-0.5 rounded-[6px]">
+                    <span className="text-[11px] text-[#86868b] dark:text-[#a1a1aa] mr-2 border border-[rgba(0,0,0,0.05)] dark:border-white/10 bg-white dark:bg-[#09090b] px-2 py-0.5 rounded-[6px]">
                       {msg.model}
                     </span>
                   )}
@@ -422,7 +417,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                   {!isLoading && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {msg.role === 'user' ? (
-                        <button onClick={() => handleWithdraw(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] rounded-[6px] text-[#86868b] dark:text-[#a1a1a6] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] transition">
+                        <button onClick={() => handleWithdraw(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] dark:hover:bg-[#27272a] rounded-[6px] text-[#86868b] dark:text-[#a1a1aa] hover:text-[#1d1d1f] dark:hover:text-[#fafafa] transition">
                            <Undo2 size={14} />
                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
                               撤回重写
@@ -430,7 +425,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                            </div>
                         </button>
                       ) : (
-                        <button onClick={() => handleRegenerate(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] rounded-[6px] text-[#86868b] dark:text-[#a1a1a6] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] transition">
+                        <button onClick={() => handleRegenerate(index)} className="group/action relative p-1.5 hover:bg-[#f5f5f7] dark:hover:bg-[#27272a] rounded-[6px] text-[#86868b] dark:text-[#a1a1aa] hover:text-[#1d1d1f] dark:hover:text-[#fafafa] transition">
                            <RotateCw size={14} />
                            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
                               重新生成
@@ -438,7 +433,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                            </div>
                         </button>
                       )}
-                      <button onClick={() => handleDeleteMessage(index)} className="group/action relative p-1.5 hover:bg-[#ff3b30]/10 rounded-[6px] text-[#86868b] dark:text-[#a1a1a6] hover:text-[#ff3b30] transition">
+                      <button onClick={() => handleDeleteMessage(index)} className="group/action relative p-1.5 hover:bg-[#ff3b30]/10 rounded-[6px] text-[#86868b] dark:text-[#a1a1aa] hover:text-[#ff3b30] transition">
                          <Trash2 size={14} />
                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1.5 bg-[#ff3b30] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover/action:opacity-100 transition-all duration-200 -translate-y-1 group-hover/action:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
                             删除记录
@@ -464,13 +459,13 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-[60px] left-0 right-0 z-20 px-4 flex justify-center"
             >
-              <div className="bg-white dark:bg-[#1c1c1e]/95 backdrop-blur-xl text-[#1d1d1f] dark:text-[#f5f5f7] w-full max-w-2xl rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-[rgba(0,0,0,0.08)] p-4 pt-3 relative top-2">
+              <div className="bg-white dark:bg-[#09090b]/95 backdrop-blur-xl text-[#1d1d1f] dark:text-[#fafafa] w-full max-w-2xl rounded-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-[rgba(0,0,0,0.08)] p-4 pt-3 relative top-2">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-[14px] font-medium text-[#1d1d1f] dark:text-[#f5f5f7]">
+                  <div className="flex items-center gap-2 text-[14px] font-medium text-[#1d1d1f] dark:text-[#fafafa]">
                     <Settings2 size={16} className="text-[#0071e3]" />
                     系统人设
                   </div>
-                  <button onClick={() => setShowPersona(false)} className="p-1 hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] rounded-full transition text-[#86868b] dark:text-[#a1a1a6] hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7]">
+                  <button onClick={() => setShowPersona(false)} className="p-1 hover:bg-[#f5f5f7] dark:hover:bg-[#27272a] rounded-full transition text-[#86868b] dark:text-[#a1a1aa] hover:text-[#1d1d1f] dark:hover:text-[#fafafa]">
                     <X size={16} />
                   </button>
                 </div>
@@ -479,7 +474,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder="例如：你是一个话很多，又特别粘人的恋人..."
                   rows={4}
-                  className="w-full bg-[#f5f5f7] dark:bg-[#000000] text-[#1d1d1f] dark:text-[#f5f5f7] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] rounded-[12px] p-3 text-[14px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:bg-white dark:bg-[#1c1c1e] transition-all placeholder:text-[#86868b] dark:text-[#a1a1a6] resize-none"
+                  className="w-full bg-[#f5f5f7] dark:bg-[#18181b] text-[#1d1d1f] dark:text-[#fafafa] border border-[rgba(0,0,0,0.05)] dark:border-white/10 rounded-[12px] p-3 text-[14px] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 focus:bg-white dark:bg-[#09090b] transition-all placeholder:text-[#86868b] dark:text-[#a1a1aa] resize-none"
                 />
                 <div className="flex justify-end mt-3">
                   <button 
@@ -494,15 +489,15 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
           )}
         </AnimatePresence>
 
-        <div className="p-4 bg-white dark:bg-[#1c1c1e] border-t border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shrink-0 relative z-10 w-full transition-all">
+        <div className="p-4 bg-white dark:bg-[#09090b] border-t border-[rgba(0,0,0,0.05)] dark:border-white/10 shrink-0 relative z-10 w-full transition-all">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-4xl mx-auto relative">
             {imageUrl && imageUrl.startsWith('data:') && (
               <div className="relative inline-block w-fit">
-                <img src={imageUrl} alt="Upload Preview" className="h-16 rounded-[8px] object-cover border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]" />
+                <img src={imageUrl} alt="Upload Preview" className="h-16 rounded-[8px] object-cover border border-[rgba(0,0,0,0.1)] dark:border-white/10" />
                 <button
                   type="button"
                   onClick={() => setImageUrl('')}
-                  className="absolute -top-2 -right-2 p-1 bg-white dark:bg-[#1c1c1e] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)] text-[#1d1d1f] dark:text-[#f5f5f7] rounded-full shadow-sm hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-all z-10"
+                  className="absolute -top-2 -right-2 p-1 bg-white dark:bg-[#09090b] border border-[rgba(0,0,0,0.1)] dark:border-white/10 text-[#1d1d1f] dark:text-[#fafafa] rounded-full shadow-sm hover:bg-[#f5f5f7] dark:hover:bg-[#27272a] transition-all z-10"
                 >
                   <X size={12} />
                 </button>
@@ -515,13 +510,13 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="可选: 贴入公网图片 URL 支持图片理解..."
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-[#f5f5f7] dark:bg-[#000000] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 transition-all disabled:opacity-50 text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b]"
+                className="w-full py-2.5 px-4 bg-[#f5f5f7] dark:bg-[#18181b] border border-transparent rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 transition-all disabled:opacity-50 text-[13px] text-[#1d1d1f] dark:text-[#fafafa] placeholder-[#86868b]"
               />
             )}
-            <div className="relative flex items-center bg-[#f5f5f7] dark:bg-[#000000] rounded-full focus-within:ring-2 focus-within:ring-[#0071e3]/30 transition-all border border-transparent">
+            <div className="relative flex items-center bg-[#f5f5f7] dark:bg-[#18181b] rounded-full focus-within:ring-2 focus-within:ring-[#0071e3]/30 transition-all border border-transparent">
               <label 
                 htmlFor="chat-image-upload" 
-                className={`group relative pl-4 pr-1.5 hover:text-[#0071e3] transition-colors cursor-pointer flex items-center justify-center py-2 ${isLoading ? 'text-[#86868b] dark:text-[#a1a1a6]/50 cursor-not-allowed' : 'text-[#86868b] dark:text-[#a1a1a6]'}`}
+                className={`group relative pl-4 pr-1.5 hover:text-[#0071e3] transition-colors cursor-pointer flex items-center justify-center py-2 ${isLoading ? 'text-[#86868b] dark:text-[#a1a1aa]/50 cursor-not-allowed' : 'text-[#86868b] dark:text-[#a1a1aa]'}`}
               >
                 <ImageIcon size={20} />
                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-[#1d1d1f] text-white text-[12px] font-medium rounded-[6px] opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 whitespace-nowrap pointer-events-none shadow-sm z-50">
@@ -540,7 +535,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
               <button
                 type="button"
                 onClick={() => setEnableThinking(!enableThinking)}
-                className={`group relative px-1.5 py-2 flex items-center justify-center transition-colors ${enableThinking ? 'text-[#0071e3]' : 'text-[#86868b] dark:text-[#a1a1a6] hover:text-[#0071e3]'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`group relative px-1.5 py-2 flex items-center justify-center transition-colors ${enableThinking ? 'text-[#0071e3]' : 'text-[#86868b] dark:text-[#a1a1aa] hover:text-[#0071e3]'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={isLoading}
               >
                 <Brain size={20} />
@@ -555,7 +550,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="输入您的问题或指令..."
                 disabled={isLoading}
-                className="flex-1 py-3.5 pl-2 pr-14 bg-transparent border-none focus:outline-none disabled:opacity-50 text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] placeholder-[#86868b]"
+                className="flex-1 py-3.5 pl-2 pr-14 bg-transparent border-none focus:outline-none disabled:opacity-50 text-[15px] text-[#1d1d1f] dark:text-[#fafafa] placeholder-[#86868b]"
               />
               <button
                 type="submit"
