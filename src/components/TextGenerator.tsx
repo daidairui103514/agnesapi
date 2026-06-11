@@ -253,44 +253,51 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar space-y-1">
-               {history.length === 0 ? (
-                 <div className="px-4 py-8 text-center text-[13px] text-[#86868b] dark:text-[#a1a1a6]">
-                    暂无对话记录
-                 </div>
-               ) : (
-                 history.map(chat => (
-                   <div 
-                      key={chat.id} 
-                      className={cn(
-                        "group flex flex-col p-3 rounded-2xl cursor-pointer transition-all border max-w-full relative",
-                        currentChatId === chat.id 
-                           ? "bg-white dark:bg-[#1c1c1e] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]" 
-                           : "bg-transparent border-transparent hover:bg-[rgba(0,0,0,0.04)]"
-                      )}
-                      onClick={() => loadChat(chat)}
-                   >
-                     <p className="text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate font-medium pr-6" title={typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}>
-                       {typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}
-                     </p>
-                     <div className="flex items-center justify-between mt-1">
-                       <p className="text-[12px] text-[#86868b] dark:text-[#a1a1a6]">
-                         {new Date(chat.timestamp).toLocaleDateString()} {new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                       </p>
-                       {chat.model && (
-                         <span className="text-[10px] text-[#86868b] dark:text-[#a1a1a6] bg-[#f5f5f7] dark:bg-[#000000] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] truncate max-w-[80px]">
-                           {chat.model}
-                         </span>
-                       )}
-                     </div>
-                     <button
-                        onClick={(e) => { e.stopPropagation(); removeHistory(chat.id); if (currentChatId === chat.id) startNewChat(); }}
-                        className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1.5 text-[#86868b] dark:text-[#a1a1a6] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"
+               <AnimatePresence initial={false}>
+                 {history.length === 0 ? (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-4 py-8 text-center text-[13px] text-[#86868b] dark:text-[#a1a1a6]">
+                      暂无对话记录
+                   </motion.div>
+                 ) : (
+                   history.map(chat => (
+                     <motion.div 
+                        key={chat.id} 
+                        layout
+                        initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                        exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className={cn(
+                          "group flex flex-col p-3 rounded-2xl cursor-pointer transition-all border max-w-full relative",
+                          currentChatId === chat.id 
+                             ? "bg-white dark:bg-[#1c1c1e] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)]" 
+                             : "bg-transparent border-transparent hover:bg-[rgba(0,0,0,0.04)]"
+                        )}
+                        onClick={() => loadChat(chat)}
                      >
-                       <X size={14} />
-                     </button>
-                   </div>
-                 ))
-               )}
+                       <p className="text-[14px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate font-medium pr-6" title={typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}>
+                         {typeof chat.messages[0]?.content === 'string' ? chat.messages[0]?.content : '图片对话'}
+                       </p>
+                       <div className="flex items-center justify-between mt-1">
+                         <p className="text-[12px] text-[#86868b] dark:text-[#a1a1a6]">
+                           {new Date(chat.timestamp).toLocaleDateString()} {new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                         </p>
+                         {chat.model && (
+                           <span className="text-[10px] text-[#86868b] dark:text-[#a1a1a6] bg-[#f5f5f7] dark:bg-[#000000] px-1.5 py-0.5 rounded-[4px] border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] truncate max-w-[80px]">
+                             {chat.model}
+                           </span>
+                         )}
+                       </div>
+                       <button
+                          onClick={(e) => { e.stopPropagation(); removeHistory(chat.id); if (currentChatId === chat.id) startNewChat(); }}
+                          className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1.5 text-[#86868b] dark:text-[#a1a1a6] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-full transition-colors"
+                       >
+                         <X size={14} />
+                       </button>
+                     </motion.div>
+                   ))
+                 )}
+               </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -339,22 +346,24 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="max-w-4xl mx-auto w-full pb-8 flex flex-col space-y-6">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center pt-[20vh] text-[#86868b] dark:text-[#a1a1a6] space-y-4">
-                <Bot size={48} className="opacity-20 mb-2" />
-                <p className="text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] font-medium mb-4">开始与 {displayModel} 的对话</p>
-              </div>
-            ) : (
-              messages.map((msg, index) => (
-                <div id={`msg-${index}`} className="scroll-mt-8 group flex flex-col pt-2" key={`msg-${index}`}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn(
-                      "flex items-start gap-4 max-w-full",
-                      msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
-                    )}
+              {messages.length === 0 ? (
+                <div key="empty" className="h-full flex flex-col items-center pt-[20vh] text-[#86868b] dark:text-[#a1a1a6] space-y-4">
+                  <Bot size={48} className="opacity-20 mb-2" />
+                  <p className="text-[15px] text-[#1d1d1f] dark:text-[#f5f5f7] font-medium mb-4">开始与 {displayModel} 的对话</p>
+                </div>
+              ) : (
+                messages.map((msg, index) => (
+                  <div 
+                    id={`msg-${index}`} 
+                    className="scroll-mt-8 group flex flex-col pt-2" 
+                    key={`${currentChatId || 'new'}-${index}`}
                   >
+                    <div
+                      className={cn(
+                        "flex items-start gap-4 max-w-full",
+                        msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
+                      )}
+                    >
                   <div
                     className={cn(
                       "p-2 rounded-full shrink-0 mt-1",
@@ -397,7 +406,7 @@ export function TextGenerator({ apiKey, baseUrl }: { apiKey: string, baseUrl?: s
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </div>
                 
                 {/* Message Actions & Meta */}
                 <div className={cn(

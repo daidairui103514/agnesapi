@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, MessageSquare, Image as ImageIcon, Video as VideoIcon, X, User as UserIcon, Bot, Sparkles, CheckCircle2, Lock, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { TextGenerator } from './components/TextGenerator';
 import { ImageGenerator } from './components/ImageGenerator';
 import { VideoGenerator } from './components/VideoGenerator';
@@ -174,8 +175,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-[#f5f5f7] dark:bg-[#000000]/80 backdrop-blur-xl border-b border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[52px] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center gap-2">
-              <img src="https://cloudflare-imgbed-9h9.pages.dev/file/头像/1765445626829_微信图片_20230406202907.jpg" alt="Logo" className="w-6 h-6 rounded-md object-cover" />
+            <div className="flex items-center justify-center">
               <span className="font-semibold text-[17px] tracking-tight">Nexus AI</span>
             </div>
           </div>
@@ -195,14 +195,23 @@ export default function App() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] transition-all duration-200",
+                      "relative flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] transition-all duration-200",
                       isActive 
-                        ? `bg-[#e8e8ed] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-[#f5f5f7] font-semibold` 
-                        : `text-[#86868b] dark:text-[#a1a1a6] hover:bg-[#e8e8ed] dark:bg-[#2c2c2e]/50 font-medium`
+                        ? `text-[#1d1d1f] dark:text-[#f5f5f7] font-semibold` 
+                        : `text-[#86868b] dark:text-[#a1a1a6] hover:bg-[#e8e8ed]/50 dark:hover:bg-[#2c2c2e]/50 font-medium`
                     )}
                   >
-                    <Icon size={14} className={isActive ? tab.color : 'text-[#86868b] dark:text-[#a1a1a6]'} />
-                    <span className="hidden sm:inline">{labelMap[tab.label] || tab.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTabPill"
+                        className="absolute inset-0 bg-[#e8e8ed] dark:bg-[#2c2c2e] rounded-full z-0"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <Icon size={14} className={isActive ? tab.color : 'text-[#86868b] dark:text-[#a1a1a6]'} />
+                      <span className="hidden sm:inline">{labelMap[tab.label] || tab.label}</span>
+                    </span>
                   </button>
                 );
               })}
@@ -244,37 +253,76 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
-        {!settings.apiKey && !isSettingsOpen && !config.hasServerKey && (
-          <div className="mb-8 p-4 bg-white dark:bg-[#1c1c1e] rounded-2xl border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] text-[15px]">未配置设置</p>
-              <p className="text-[13px] text-[#86868b] dark:text-[#a1a1a6] mt-1">请在设置中输入 API 密钥以使用完整功能，并设置账号以便同步云端记录。</p>
-            </div>
-            <button 
-              onClick={() => {
-                setApiKeyInput(settings.apiKey);
-                setBaseUrlInput(settings.baseUrl || 'https://apihub.agnes-ai.com/v1');
-                setUserInput(user);
-                setIsSettingsOpen(true);
-              }}
-              className="px-4 py-2 bg-[#0071e3] text-white text-[13px] font-medium rounded-full hover:bg-[#0077ed] transition w-max shrink-0"
-            >
-              打开设置
-            </button>
-          </div>
-        )}
+          <AnimatePresence>
+            {!settings.apiKey && !isSettingsOpen && !config.hasServerKey && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginBottom: 32 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
+                className="p-4 bg-white dark:bg-[#1c1c1e] rounded-2xl border border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] shadow-[0_2px_12px_rgba(0,0,0,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              >
+                <div>
+                  <p className="font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] text-[15px]">未配置设置</p>
+                  <p className="text-[13px] text-[#86868b] dark:text-[#a1a1a6] mt-1">请在设置中输入 API 密钥以使用完整功能，并设置账号以便同步云端记录。</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setApiKeyInput(settings.apiKey);
+                    setBaseUrlInput(settings.baseUrl || 'https://apihub.agnes-ai.com/v1');
+                    setUserInput(user);
+                    setIsSettingsOpen(true);
+                  }}
+                  className="px-4 py-2 bg-[#0071e3] text-white text-[13px] font-medium rounded-full hover:bg-[#0077ed] transition w-max shrink-0"
+                >
+                  打开设置
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative flex-1">
-          <div className={activeTab === 'text' ? 'block h-full' : 'hidden'}><TextGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} /></div>
-          <div className={activeTab === 'image' ? 'block h-full' : 'hidden'}><ImageGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} /></div>
-          <div className={activeTab === 'video' ? 'block h-full' : 'hidden'}><VideoGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} /></div>
+        <div className="relative flex-1">
+          <motion.div
+             initial={false}
+             animate={{ opacity: activeTab === 'text' ? 1 : 0, zIndex: activeTab === 'text' ? 10 : 0 }}
+             transition={{ duration: 0.3 }}
+             className={cn("absolute inset-0", activeTab === 'text' ? 'pointer-events-auto' : 'pointer-events-none')}
+          >
+            <TextGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} />
+          </motion.div>
+          <motion.div
+             initial={false}
+             animate={{ opacity: activeTab === 'image' ? 1 : 0, zIndex: activeTab === 'image' ? 10 : 0 }}
+             transition={{ duration: 0.3 }}
+             className={cn("absolute inset-0", activeTab === 'image' ? 'pointer-events-auto' : 'pointer-events-none')}
+          >
+            <ImageGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} />
+          </motion.div>
+          <motion.div
+             initial={false}
+             animate={{ opacity: activeTab === 'video' ? 1 : 0, zIndex: activeTab === 'video' ? 10 : 0 }}
+             transition={{ duration: 0.3 }}
+             className={cn("absolute inset-0", activeTab === 'video' ? 'pointer-events-auto' : 'pointer-events-none')}
+          >
+            <VideoGenerator apiKey={settings.apiKey || (config.hasServerKey ? "server_key" : "")} baseUrl={settings.baseUrl} />
+          </motion.div>
         </div>
       </main>
 
       {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#f5f5f7] dark:bg-[#000000]/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-[0_16px_64px_rgba(0,0,0,0.12)] w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#f5f5f7]/80 dark:bg-[#000000]/80 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-[0_16px_64px_rgba(0,0,0,0.12)] w-full max-w-md overflow-hidden"
+            >
             <div className="flex items-center justify-between p-6">
               <h2 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-[#f5f5f7] tracking-tight">设置</h2>
               <button 
@@ -373,9 +421,10 @@ export default function App() {
                 完成
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
